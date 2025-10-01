@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Header from '@/components/Header'
 import HeroSection from '@/components/HeroSection'
+import PayRevealSection from '@/components/PayRevealSection'
 import Features from '@/components/Features'
 import HowItWorks from '@/components/HowItWorks'
 import CTASection from '@/components/CTASection'
@@ -32,6 +33,7 @@ export default function Home() {
      
       <Header />
       <HeroSection />
+      <PayRevealSection />
       <Features scrollY={scrollY} />
       <HowItWorks />
       <CTASection />
