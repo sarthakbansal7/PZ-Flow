@@ -17,7 +17,8 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
-  Edit
+  Edit,
+  Info
 } from "lucide-react";
 import Link from "next/link";
 
@@ -37,6 +38,7 @@ const PayrollPage: React.FC = () => {
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error' | 'info'; message: string} | null>(null);
   const [newEmployee, setNewEmployee] = useState({
     wallet: "",
@@ -45,9 +47,16 @@ const PayrollPage: React.FC = () => {
     salary: ""
   });
 
-  // Initialize with empty employees array
+  // Initialize with empty employees array and check first visit
   useEffect(() => {
     setEmployees([]);
+    
+    // Check if this is the first visit
+    const hasVisitedPayroll = localStorage.getItem('payroll-visited');
+    if (!hasVisitedPayroll) {
+      setShowTutorial(true);
+      localStorage.setItem('payroll-visited', 'true');
+    }
   }, []);
 
   // Show notification
@@ -312,38 +321,22 @@ const PayrollPage: React.FC = () => {
               <Link href="/" className="text-green-600 hover:text-green-800 transition-colors">
                 <Home size={24} />
               </Link>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">💼 Corporate Payroll</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent"> Corporate Payroll</h1>
             </div>
             
             <div className="flex items-center space-x-6">
-              {/* Small stats */}
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center space-x-1">
-                  <Users size={16} />
-                  <span>{employees.length}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <CheckCircle size={16} />
-                  <span>{selectedEmployees.length}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <DollarSign size={16} />
-                  <span>${calculateTotalAmount().toLocaleString()}</span>
-                </div>
-              </div>
-              
               {/* Action buttons */}
               <div className="flex items-center space-x-3">
                 <button
                   onClick={downloadExcelTemplate}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
                 >
-                  <Download size={18} />
-                  <span>Download Template</span>
+                  <Download size={14} />
+                  <span>Template</span>
                 </button>
                 
-                <label className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
-                  <Upload size={18} />
+                <label className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors cursor-pointer text-sm">
+                  <Upload size={14} />
                   <span>Upload CSV</span>
                   <input
                     type="file"
@@ -355,10 +348,18 @@ const PayrollPage: React.FC = () => {
 
                 <button
                   onClick={() => setShowAddEmployeeModal(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
                 >
-                  <Plus size={18} />
+                  <Plus size={14} />
                   <span>Add Employee</span>
+                </button>
+                
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  className="w-8 h-8 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center text-xs font-bold transition-colors"
+                  title="Show Tutorial"
+                >
+                  i
                 </button>
               </div>
             </div>
@@ -369,10 +370,27 @@ const PayrollPage: React.FC = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Employee Table */}
-        <div className="bg-white rounded-lg border border-gray-100">
-          <div className="px-6 py-4 border-b border-gray-100">
+        <div className="bg-transparent backdrop-blur-sm rounded-lg border border-green-200/50 shadow-sm">
+          <div className="px-6 py-4 border-b border-green-100/50 bg-green-50/30">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-medium text-gray-900">Employee List</h2>
+              <div className="flex items-center space-x-6">
+                <h2 className="text-lg font-medium text-gray-900">Employee List</h2>
+                {/* Employee stats */}
+                <div className="flex items-center space-x-4 text-sm text-green-700">
+                  <div className="flex items-center space-x-1 px-2 py-1 bg-green-100 rounded-full">
+                    <Users size={14} />
+                    <span>{employees.length} Employees</span>
+                  </div>
+                  <div className="flex items-center space-x-1 px-2 py-1 bg-emerald-100 rounded-full">
+                    <CheckCircle size={14} />
+                    <span>{selectedEmployees.length} Selected</span>
+                  </div>
+                  <div className="flex items-center space-x-1 px-2 py-1 bg-teal-100 rounded-full">
+                    <DollarSign size={14} />
+                    <span>${calculateTotalAmount().toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
               {selectedEmployees.length > 0 && (
                 <button
                   onClick={handlePaySelectedEmployees}
@@ -390,7 +408,7 @@ const PayrollPage: React.FC = () => {
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-green-50/30 backdrop-blur-sm">
                 <tr>
                   <th className="px-6 py-3 text-left">
                     <div className="flex items-center space-x-2">
@@ -426,7 +444,7 @@ const PayrollPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-transparent divide-y divide-green-100/50">
                 {employees.map((employee) => (
                   <tr 
                     key={employee.id}
@@ -490,37 +508,28 @@ const PayrollPage: React.FC = () => {
           </div>
 
           {employees.length === 0 && (
-            <div className="text-center py-12">
-              <Users className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No employees</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Add employees manually or upload a CSV file to get started.
+            <div className="text-center py-16 bg-transparent rounded-b-lg">
+              <Users className="mx-auto h-16 w-16 text-gray-400" />
+              <h3 className="mt-4 text-lg font-medium text-gray-900">No employees yet</h3>
+              <p className="mt-2 text-sm text-gray-500 max-w-sm mx-auto">
+                Start building your team! Add employees manually or upload a CSV file to get started.
               </p>
+              <div className="mt-6 flex justify-center space-x-3">
+                <button
+                  onClick={() => setShowAddEmployeeModal(true)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                >
+                  Add First Employee
+                </button>
+                <button
+                  onClick={downloadExcelTemplate}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
+                >
+                  Download Template
+                </button>
+              </div>
             </div>
           )}
-        </div>
-
-        {/* Instructions */}
-        <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-900 mb-3">How to Add Employees</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-medium text-blue-800 mb-2">Manual Entry</h4>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
-                <li>Click "Add Employee" button</li>
-                <li>Fill in all required details</li>
-                <li>Click "Save" to add employee</li>
-              </ol>
-            </div>
-            <div>
-              <h4 className="font-medium text-blue-800 mb-2">Bulk Upload</h4>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
-                <li>Download the CSV template</li>
-                <li>Fill in employee details</li>
-                <li>Click "Upload CSV" to add all employees</li>
-              </ol>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -665,6 +674,128 @@ const PayrollPage: React.FC = () => {
           {notification.type === 'error' && <AlertCircle size={20} />}
           {notification.type === 'info' && <AlertCircle size={20} />}
           <span>{notification.message}</span>
+        </div>
+      )}
+
+      {/* Tutorial Modal */}
+      {showTutorial && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">🚀 Welcome to Corporate Payroll!</h2>
+                  <p className="text-green-100 mt-1">Get started with managing your employee payments in just a few simple steps</p>
+                </div>
+                <button
+                  onClick={() => setShowTutorial(false)}
+                  className="text-white hover:text-green-200 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Step 1 */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3">1</div>
+                    <h3 className="font-bold text-green-800 text-lg">Download Template</h3>
+                  </div>
+                  <div className="space-y-3 text-sm text-green-700">
+                    <p>• Click <span className="bg-green-100 px-2 py-1 rounded font-medium">"Template"</span> button in header</p>
+                    <p>• Download the CSV template file</p>
+                    <p>• Open in Excel or Google Sheets</p>
+                    <p>• Fill employee details: Name, Email, Wallet, Salary</p>
+                    <div className="bg-green-100 p-3 rounded-lg mt-3">
+                      <p className="font-medium text-green-800">CSV Format:</p>
+                      <code className="text-xs text-green-700">Name, Email, Wallet, Salary</code>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3">2</div>
+                    <h3 className="font-bold text-green-800 text-lg">Add Employees</h3>
+                  </div>
+                  <div className="space-y-3 text-sm text-green-700">
+                    <div>
+                      <p className="font-medium">Bulk Upload:</p>
+                      <p>• Click <span className="bg-green-100 px-2 py-1 rounded font-medium">"Upload CSV"</span> with your filled template</p>
+                    </div>
+                    <div>
+                      <p className="font-medium">Manual Entry:</p>
+                      <p>• Click <span className="bg-green-100 px-2 py-1 rounded font-medium">"Add Employee"</span> for single entries</p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-lg mt-3">
+                      <p className="font-medium text-green-800">Pro Tip:</p>
+                      <p className="text-xs text-green-700">Bulk upload is faster for multiple employees!</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 3 */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-green-600 text-white rounded-full flex items-center justify-center font-bold mr-3">3</div>
+                    <h3 className="font-bold text-green-800 text-lg">Process Payments</h3>
+                  </div>
+                  <div className="space-y-3 text-sm text-green-700">
+                    <p>• Select employees using checkboxes</p>
+                    <p>• Review total amount in the stats badges</p>
+                    <p>• Click <span className="bg-green-100 px-2 py-1 rounded font-medium">"Pay Selected"</span> button</p>
+                    <p>• Confirm payment details and execute</p>
+                    <div className="bg-green-100 p-3 rounded-lg mt-3">
+                      <p className="font-medium text-green-800">Security:</p>
+                      <p className="text-xs text-green-700">Always verify wallet addresses before paying!</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Tips */}
+              <div className="mt-8 p-6 bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg border border-green-300">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="text-green-600 mt-1" size={20} />
+                  <div>
+                    <h4 className="font-bold text-green-800 mb-2">💡 Pro Tips for Success:</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm text-green-700">
+                      <li>Ensure all wallet addresses are valid before uploading</li>
+                      <li>You can edit employee details anytime by clicking the edit icon</li>
+                      <li>Use "Select All" checkbox to pay all employees at once</li>
+                      <li>Download your employee list as backup using the export feature</li>
+                      <li>The system prevents duplicate entries by email and wallet address</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-center space-x-4 mt-8">
+                <button
+                  onClick={() => setShowTutorial(false)}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  Got it! Let's start 🚀
+                </button>
+                <button
+                  onClick={() => {
+                    setShowTutorial(false);
+                    downloadExcelTemplate();
+                  }}
+                  className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                >
+                  Download Template First 📄
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

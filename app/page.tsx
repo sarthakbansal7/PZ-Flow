@@ -7,6 +7,7 @@ import PayRevealSection from '@/components/PayRevealSection'
 import Features from '@/components/Features'
 import HowItWorks from '@/components/HowItWorks'
 import CTASection from '@/components/CTASection'
+import Testimonials from '@/components/Testimonials'
 import Footer from '@/components/Footer'
 
 export default function Home() {
@@ -35,8 +36,8 @@ export default function Home() {
       <HeroSection />
       <PayRevealSection />
       <Features scrollY={scrollY} />
-      <HowItWorks />
       <CTASection />
+      <Testimonials />
       <Footer />
     </div>
   )
