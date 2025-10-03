@@ -20,7 +20,7 @@ export default function Header() {
   const [isServicesOpen, setIsServicesOpen] = useState(false)
 
   return (
-    <nav className="fixed top-8 left-0 right-0 z-50 px-6 lg:px-12">
+    <nav className="relative top-0 left-0 right-0 z-50 px-6 lg:px-12 py-6">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
         {/* Logo */}
         <div className="font-bold text-2xl text-slate-800">

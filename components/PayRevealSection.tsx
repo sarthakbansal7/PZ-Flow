@@ -182,12 +182,12 @@ export default function PayRevealSection() {
             </p>
           </div>
 
-          {/* Right Content - Circular Reveal */}
+          {/* Right Content - Payment Illustration */}
           <div className="flex items-center justify-center lg:justify-end">
             {isInView && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.8, y: 50 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ 
                   delay: 1.5, // Start after text animations
                   duration: 0.8,
@@ -195,17 +195,105 @@ export default function PayRevealSection() {
                   damping: 20,
                   stiffness: 100
                 }}
+                className="relative max-w-lg w-full"
               >
-                <CircularRevealHeading
-                  items={paymentItems}
-                  centerText={
-                    <div className="text-lg font-bold text-[#444444] text-center">
-                      <div className="text-sky-600">PayZoll</div>
-                      <div className="text-sm text-gray-500 mt-1">Web3 Payments</div>
+                {/* Main Payment Image */}
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-cyan-50 to-blue-100">
+                  <img
+                    src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                    alt="Digital Payment Illustration"
+                    className="w-full h-[400px] object-cover"
+                  />
+                  
+                  {/* Floating Payment Cards */}
+                  <motion.div
+                    initial={{ x: -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 2, duration: 0.6 }}
+                    className="absolute top-8 -left-4 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/50"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v2H4V6zm0 4h12v4H4v-4z"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">Instant Transfer</div>
+                        <div className="text-xs text-gray-500">2,500,000</div>
+                      </div>
                     </div>
-                  }
-                  size="lg"
-                />
+                  </motion.div>
+
+                  {/* Success Notification */}
+                  <motion.div
+                    initial={{ x: 100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 2.3, duration: 0.6 }}
+                    className="absolute top-24 -right-4 bg-emerald-500 text-white rounded-2xl p-4 shadow-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                      </svg>
+                      <span className="text-sm font-medium">Payment Sent!</span>
+                    </div>
+                  </motion.div>
+
+                  {/* Mobile Payment Interface */}
+                  <motion.div
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 2.6, duration: 0.6 }}
+                    className="absolute bottom-8 left-8 right-8 bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-white/50"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-700">Quick Pay</span>
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                        <div className="w-2 h-2 bg-sky-400 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-gradient-to-r from-cyan-100 to-blue-100 rounded-lg p-2 text-center">
+                        <div className="text-xs font-medium text-gray-700">SOL</div>
+                      </div>
+                      <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-lg p-2 text-center">
+                        <div className="text-xs font-medium text-gray-700">USD</div>
+                      </div>
+                      <div className="bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg p-2 text-center">
+                        <div className="text-xs font-medium text-gray-700">ETH</div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Animated Background Orbs */}
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      opacity: [0.3, 0.6, 0.3]
+                    }}
+                    transition={{ 
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="absolute top-1/4 right-1/4 w-16 h-16 bg-cyan-300/30 rounded-full blur-xl"
+                  />
+                  <motion.div
+                    animate={{ 
+                      scale: [1.2, 1, 1.2],
+                      opacity: [0.2, 0.5, 0.2]
+                    }}
+                    transition={{ 
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    className="absolute bottom-1/3 left-1/4 w-20 h-20 bg-blue-300/30 rounded-full blur-xl"
+                  />
+                </div>
               </motion.div>
             )}
           </div>

@@ -76,18 +76,15 @@ export default function HeroSection() {
         if (bubble.x <= 0 || bubble.x >= canvas.width) bubble.vx *= -1
         if (bubble.y <= 0 || bubble.y >= canvas.height) bubble.vy *= -1
 
-        // Create gradient
-        const gradient = ctx.createRadialGradient(
-          bubble.x, bubble.y, 0,
-          bubble.x, bubble.y, bubble.radius
-        )
+        // Professional solid colors: Light Blue, Green, White
+        const colorOptions = [
+          `rgba(59, 130, 246, ${bubble.opacity})`, // blue-500 (lighter)
+          `rgba(34, 197, 94, ${bubble.opacity})`, // green-500  
+          `rgba(255, 255, 255, ${bubble.opacity * 0.3})`, // white with lower opacity
+        ]
+        const solidColor = colorOptions[index % 3]
         
-        // Sky blue gradient colors
-        gradient.addColorStop(0, `rgba(14, 165, 233, ${bubble.opacity})`) // sky-500
-        gradient.addColorStop(0.5, `rgba(56, 189, 248, ${bubble.opacity * 0.7})`) // sky-400
-        gradient.addColorStop(1, `rgba(125, 211, 252, ${bubble.opacity * 0.3})`) // sky-300
-
-        ctx.fillStyle = gradient
+        ctx.fillStyle = solidColor
         ctx.beginPath()
         ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2)
         ctx.fill()
@@ -112,11 +109,11 @@ export default function HeroSection() {
 
   return (
     <section className="relative min-h-screen overflow-hidden px-1 sm:px-1 lg:px-1">
-      {/* White Top Section */}
-      <div className="bg-white h-32"></div>
+      {/* Minimal White Top Section */}
+      <div className="bg-white h-8"></div>
       
-      {/* Blue Section with Rounded Corners */}
-      <div className="relative bg-gradient-to-br from-sky-400 via-sky-500 to-blue-600 rounded-t-[4rem] min-h-[calc(100vh-8rem)] mx-1 sm:mx-2 lg:mx-4 xl:mx-8">
+      {/* Professional Blue Section */}
+      <div className="relative bg-blue-500 rounded-t-[4rem] min-h-[calc(100vh-2rem)] mx-1 sm:mx-2 lg:mx-4 xl:mx-8">
         {/* Animated Background Canvas */}
         <canvas
           ref={canvasRef}
@@ -132,16 +129,16 @@ export default function HeroSection() {
 
               {/* Main Headlines */}
               <div className="space-y-6 mb-12">
-                <h1 className="text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-none tracking-tight">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-none tracking-tight">
                   Simple.
                 </h1>
-                <h1 className="text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black leading-none tracking-tight">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black leading-none tracking-tight">
                   Safe. Secure.
                 </h1>
               </div>
 
               {/* Description */}
-              <p className="text-xl md:text-2xl text-white/90 max-w-2xl leading-relaxed font-light">
+              <p className="text-xl md:text-2xl text-white/90 max-w-2xl leading-relaxed font-medium">
                 The ultimate Web3 payment platform for streaming, distributing, and automating payments directly from your wallet across 14+ networks.
               </p>
             </div>
@@ -175,7 +172,15 @@ export default function HeroSection() {
                             ? 'bg-white/30 border-white/50 scale-105' 
                             : 'bg-white/10 border-white/20'
                         }`}>
-                          <div className="w-12 h-12 bg-gradient-to-r from-sky-300 to-blue-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            position === 0 
+                              ? 'bg-green-500 shadow-lg' 
+                              : index % 3 === 0 
+                                ? 'bg-blue-500/70'
+                                : index % 3 === 1
+                                  ? 'bg-green-500/70'
+                                  : 'bg-white/20'
+                          }`}>
                             <service.icon className="w-6 h-6 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
