@@ -79,15 +79,15 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
   };
 
   const downloadTemplate = () => {
-    // Create CSV template
-    const template = "name,email,designation,salary,wallet\nJohn Doe,john@example.com,Developer,5000,0x1234567890abcdef1234567890abcdef12345678\nJane Smith,jane@example.com,Designer,4500,0xabcdef1234567890abcdef1234567890abcdef12";
+    // Create CSV template for bulk disbursement
+    const template = "name,wallet,amount,description\nAlice Johnson,0x1234567890abcdef1234567890abcdef12345678,100.00,Marketing Services\nBob Smith,0xabcdef1234567890abcdef1234567890abcdef12,250.00,Development Work\nCarol Davis,0x9876543210fedcba9876543210fedcba98765432,150.00,Content Creation";
 
     const blob = new Blob([template], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.setAttribute('hidden', '');
     a.setAttribute('href', url);
-    a.setAttribute('download', 'employee_template.csv');
+    a.setAttribute('download', 'bulk_disbursement_template.csv');
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -198,7 +198,7 @@ const BulkUploadModal: React.FC<BulkUploadModalProps> = ({ isOpen, onClose, onUp
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-black dark:text-white text-base sm:text-lg mb-1">Download Template</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-2 sm:mb-3">Use our template to ensure your data is formatted correctly</p>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-2 sm:mb-3">Use our template to ensure your bulk disbursement data is formatted correctly</p>
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
