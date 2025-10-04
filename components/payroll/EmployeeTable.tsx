@@ -673,7 +673,7 @@ const EmployeeTable: React.FC<EmployeeTableProps> = ({
                                     : isSending || isWritePending || isTxLoading
                                         ? 'Processing...'
                                         : selectedEmployees.length === 0
-                                            ? 'Select Employees'
+                                            ? 'Select Recipients'
                                             : needsApproval && selectedToken?.address !== 'NATIVE_ADDRESS'
                                                 ? `Approve & Send`
                                                 : `Pay Selected (${selectedEmployees.length})`}
