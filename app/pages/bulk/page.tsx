@@ -447,6 +447,17 @@ const BulkPayoutPage: React.FC = () => {
     }
   };
 
+  const handleBulkRecipientsUpload = async (uploadedRecipients: any[]) => {
+    try {
+      const newRecipients = uploadedRecipients.map(recipient => convertEmployeeToBulkRecipient(recipient));
+      setRecipients((prevRecipients) => [...prevRecipients, ...newRecipients]);
+      toast.success(`Successfully added ${uploadedRecipients.length} recipient(s)`);
+    } catch (error: any) {
+      console.error("Failed to add bulk recipients:", error);
+      toast.error("Failed to add bulk recipients");
+    }
+  };
+
   const handleUpdateRecipient = async (wallet: string, updatedData: Partial<Recipient>) => {
     try {
       const updatedBulkData = convertEmployeeToBulkRecipient(updatedData as Recipient);
@@ -554,6 +565,7 @@ const BulkPayoutPage: React.FC = () => {
           onUploadSuccess={() => {
             setShowBulkUploadModal(false);
           }}
+          onRecipientsUploaded={handleBulkRecipientsUpload}
         />
 
         {/* Delete Confirmation Dialog */}
