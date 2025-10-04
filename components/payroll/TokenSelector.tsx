@@ -18,7 +18,7 @@ interface TokenSelectorProps {
     onExchangeRateChange: (rate: number) => void;
 }
 
-const PHAROS_CHAIN_ID = 50002;
+const U2U_CHAIN_ID = 39;
 
 const TokenSelector = ({
     tokens,
@@ -35,10 +35,10 @@ const TokenSelector = ({
     const [fallbackBalance, setFallbackBalance] = useState<string | null>(null);
     const [fallbackError, setFallbackError] = useState<Error | null>(null);
 
-    // Check if we're on Pharos chain
-    const isPharosChain = chainId === PHAROS_CHAIN_ID;
+    // Check if we're on U2U chain
+    const isU2UChain = chainId === U2U_CHAIN_ID;
 
-    // Only enable wagmi hook if NOT on Pharos chain
+    // Only enable wagmi hook if NOT on U2U chain
     const {
         data: balance,
         isLoading: isBalanceLoading,
@@ -51,8 +51,8 @@ const TokenSelector = ({
             : (selectedToken?.address as `0x${string}`),
         chainId: chainId,
         query: {
-            // Disable the hook for Pharos chain
-            enabled: isConnected && !!selectedToken && !!address && !isPharosChain,
+            // Disable the hook for U2U chain
+            enabled: isConnected && !!selectedToken && !!address && !isU2UChain,
             retry: 3,
             retryDelay: 1000
         }
@@ -90,9 +90,9 @@ const TokenSelector = ({
             ? parseFloat(fallbackBalance).toFixed(4)
             : '0';
 
-    // For Pharos chain, fetch directly with ethers whenever relevant dependencies change
+    // For U2U chain, fetch directly with ethers whenever relevant dependencies change
     useEffect(() => {
-        if (isPharosChain && isConnected && address && selectedToken && !fallbackBalance && !isFallbackLoading) {
+        if (isU2UChain && isConnected && address && selectedToken && !fallbackBalance && !isFallbackLoading) {
             setIsFallbackLoading(true);
             setFallbackError(null);
 
@@ -102,17 +102,17 @@ const TokenSelector = ({
                 })
                 .catch(err => {
                     setFallbackError(err as Error);
-                    console.error("Error fetching Pharos chain balance:", err);
+                    console.error("Error fetching U2U chain balance:", err);
                 })
                 .finally(() => {
                     setIsFallbackLoading(false);
                 });
         }
-    }, [isPharosChain, isConnected, address, selectedToken, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
+    }, [isU2UChain, isConnected, address, selectedToken, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
 
-    // Effect for non-Pharos chains when wagmi hook fails
+    // Effect for non-U2U chains when wagmi hook fails
     useEffect(() => {
-        if (!isPharosChain && balanceError && !fallbackBalance && !isFallbackLoading) {
+        if (!isU2UChain && balanceError && !fallbackBalance && !isFallbackLoading) {
             setIsFallbackLoading(true);
             setFallbackError(null);
 
@@ -127,7 +127,7 @@ const TokenSelector = ({
                     setIsFallbackLoading(false);
                 });
         }
-    }, [isPharosChain, balanceError, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
+    }, [isU2UChain, balanceError, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
 
     // Reset fallback data when token changes
     useEffect(() => {
@@ -163,8 +163,8 @@ const TokenSelector = ({
         setFallbackBalance(null);
         setFallbackError(null);
 
-        if (isPharosChain) {
-            // For Pharos, directly trigger ethers fetch by resetting state
+        if (isU2UChain) {
+            // For U2U, directly trigger ethers fetch by resetting state
             setIsFallbackLoading(true);
             fetchBalanceWithEthers()
                 .then(result => {
@@ -182,18 +182,18 @@ const TokenSelector = ({
         }
     };
 
-    // Effect to fetch balance when token/chain changes (for non-Pharos chains)
+    // Effect to fetch balance when token/chain changes (for non-U2U chains)
     useEffect(() => {
-        if (isConnected && selectedToken && address && !isPharosChain) {
+        if (isConnected && selectedToken && address && !isU2UChain) {
             refetchBalance();
         }
-    }, [selectedToken?.address, refetchBalance, isConnected, address, isPharosChain]);
+    }, [selectedToken?.address, refetchBalance, isConnected, address, isU2UChain]);
 
     // Determine loading state based on active fetch method
-    const isAnyBalanceLoading = (isPharosChain ? isFallbackLoading : (isBalanceLoading || isFallbackLoading));
+    const isAnyBalanceLoading = (isU2UChain ? isFallbackLoading : (isBalanceLoading || isFallbackLoading));
 
-    // Error state - for Pharos we only check fallback error, for others we check both
-    const hasRealBalanceError = isPharosChain ? fallbackError : (balanceError && fallbackError);
+    // Error state - for U2U we only check fallback error, for others we check both
+    const hasRealBalanceError = isU2UChain ? fallbackError : (balanceError && fallbackError);
 
     if (!isConnected) {
         return (
