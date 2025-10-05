@@ -2,11 +2,15 @@
 
 import React, { useState, useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount } from 'wagmi'
+import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi'
+import { parseUnits, formatUnits } from 'viem'
 import { Wallet, Gift, Coins, Plus, Minus, RefreshCw, Home, ExternalLink, Upload, Download, Edit, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from "react-hot-toast"
 import Link from 'next/link'
+import { getAirdropAddress, NATIVE_TOKEN_ADDRESS } from '@/lib/contract-addresses'
+import { U2U_TESTNET_CONFIG } from '@/api/u2uApi'
+import airdropAbi from '@/lib/AirdropAbi.json'
 
 // Types for airdrop data
 interface AirdropRecipient {
@@ -23,10 +27,7 @@ interface ClaimableAirdrop {
   token: string;
   tokenSymbol: string;
   amount: string;
-  contractAddress: string;
-  airdropId: string;
-  createdAt: string;
-  status: string;
+  rawAmount: bigint;
 }
 
 interface CreatedAirdrop {
@@ -68,6 +69,42 @@ export default function Page() {
   // Wallet connection
   const { address, isConnected } = useAccount()
 
+  // Contract hooks
+  const { writeContractAsync } = useWriteContract()
+  const [pendingTxHash, setPendingTxHash] = useState<`0x${string}` | undefined>()
+  
+  // Get airdrop contract address
+  const airdropContractAddress = getAirdropAddress(U2U_TESTNET_CONFIG.chainId)
+
+  // Read native token claimable amount
+  const { data: nativeClaimableAmount, refetch: refetchNative } = useReadContract({
+    address: airdropContractAddress as `0x${string}`,
+    abi: airdropAbi.abi,
+    functionName: 'getClaimableETH',
+    args: address ? [address] : undefined,
+    chainId: U2U_TESTNET_CONFIG.chainId,
+    query: {
+      enabled: !!address && !!airdropContractAddress,
+    }
+  })
+
+  // Helper functions
+  const getTokenAddress = (tokenSymbol: string): string => {
+    if (tokenSymbol === 'U2U') {
+      return NATIVE_TOKEN_ADDRESS
+    }
+    const customToken = customTokens.find(token => token.symbol === tokenSymbol)
+    return customToken?.address || NATIVE_TOKEN_ADDRESS
+  }
+
+  const getTokenSymbol = (tokenAddress: string): string => {
+    if (tokenAddress === NATIVE_TOKEN_ADDRESS) {
+      return 'U2U'
+    }
+    const customToken = customTokens.find(token => token.address.toLowerCase() === tokenAddress.toLowerCase())
+    return customToken?.symbol || 'Unknown'
+  }
+
   // Set mounted state after hydration
   useEffect(() => {
     setIsMounted(true)
@@ -76,6 +113,24 @@ export default function Page() {
       fetchClaimableAirdrops()
     }
   }, [isConnected, address])
+
+  // Update claimable airdrops when native amount changes
+  useEffect(() => {
+    if (nativeClaimableAmount !== undefined) {
+      const newClaimableAirdrops: ClaimableAirdrop[] = []
+      
+      if (nativeClaimableAmount && BigInt(nativeClaimableAmount as any) > BigInt(0)) {
+        newClaimableAirdrops.push({
+          token: NATIVE_TOKEN_ADDRESS,
+          tokenSymbol: 'U2U',
+          amount: formatUnits(nativeClaimableAmount as bigint, 18),
+          rawAmount: nativeClaimableAmount as bigint,
+        })
+      }
+      
+      setClaimableAirdrops(newClaimableAirdrops)
+    }
+  }, [nativeClaimableAmount])
 
   // Calculate total amount when recipients change
   useEffect(() => {
@@ -117,34 +172,50 @@ export default function Page() {
     }, 1000)
   }
 
-  // Mock function to check for claimable airdrops
+  // Fetch claimable airdrops from smart contract
   const fetchClaimableAirdrops = async () => {
+    if (!isConnected || !address || !airdropContractAddress) {
+      setClaimableAirdrops([])
+      return
+    }
+
     setIsCheckingClaims(true)
     
-    setTimeout(() => {
-      const mockClaimableAirdrops: ClaimableAirdrop[] = [
-        {
-          airdropId: 'AIR003',
-          token: '0x0000000000000000000000000000000000000000',
-          tokenSymbol: 'ETH',
-          amount: '0.5',
-          contractAddress: '0x1234567890123456789012345678901234567890',
-          createdAt: new Date(Date.now() - 3600000).toISOString(),
-          status: 'available'
-        },
-        {
-          airdropId: 'AIR004',
-          token: '0xA0b86a33E6441a0e3Ce4C3C9eBDfEb5c45Dd6aF9',
-          tokenSymbol: 'USDC',
-          amount: '100.0',
-          contractAddress: '0x1234567890123456789012345678901234567890',
-          createdAt: new Date(Date.now() - 7200000).toISOString(),
-          status: 'available'
+    try {
+      const claimableAirdrops: ClaimableAirdrop[] = []
+
+      // Refetch native amount
+      const { data: nativeAmount } = await refetchNative()
+
+      if (nativeAmount && BigInt(nativeAmount as any) > BigInt(0)) {
+        claimableAirdrops.push({
+          token: NATIVE_TOKEN_ADDRESS,
+          tokenSymbol: 'U2U',
+          amount: formatUnits(nativeAmount as bigint, 18),
+          rawAmount: nativeAmount as bigint,
+        })
+      }
+
+      // For custom tokens, we'll need to make separate calls
+      // This is a simplified version - in a real app you might want to batch these calls
+      for (const customToken of customTokens) {
+        try {
+          // Note: This is a simplified approach. In production, you'd want to use a multicall
+          // or create separate useReadContract hooks for each token
+          console.log(`Checking claimable amount for ${customToken.symbol} at ${customToken.address}`)
+        } catch (error) {
+          console.error(`Error fetching claimable amount for ${customToken.symbol}:`, error)
         }
-      ]
-      setClaimableAirdrops(mockClaimableAirdrops)
+      }
+
+      setClaimableAirdrops(claimableAirdrops)
+      
+    } catch (error) {
+      console.error('Error fetching claimable airdrops:', error)
+      toast.error('Failed to fetch claimable airdrops')
+    } finally {
       setIsCheckingClaims(false)
-    }, 1500)
+    }
   }
 
   // Add new recipient
@@ -168,45 +239,110 @@ export default function Page() {
 
   // Handle airdrop creation
   const handleCreateAirdrop = async () => {
-    if (!isConnected) {
+    if (!isConnected || !address) {
       toast.error('Please connect your wallet')
       return
     }
 
+    if (!airdropContractAddress) {
+      toast.error('Airdrop contract not available on this network')
+      return
+    }
+
     // Validate inputs
-    const validRecipients = recipients.filter(r => r.address && r.amount)
+    const validRecipients = recipients.filter(r => r.address && r.amount && parseFloat(r.amount) > 0)
     if (validRecipients.length === 0) {
       toast.error('Please add at least one recipient with valid address and amount')
       return
     }
 
-    setIsCreating(true)
-    
-    // Mock airdrop creation
-    setTimeout(() => {
-      toast.success(`Airdrop created successfully! ${validRecipients.length} recipients will receive ${selectedToken}`)
-      setIsCreating(false)
+    try {
+      setIsCreating(true)
+      
+      // Prepare contract parameters
+      const tokenAddress = getTokenAddress(selectedToken)
+      const recipientAddresses = validRecipients.map(r => r.address as `0x${string}`)
+      const amounts = validRecipients.map(r => parseUnits(r.amount, 18)) // Assuming 18 decimals
+      
+      // Calculate total amount for native token
+      const totalNativeAmount = tokenAddress === NATIVE_TOKEN_ADDRESS 
+        ? amounts.reduce((sum, amount) => sum + amount, BigInt(0))
+        : BigInt(0)
+
+      console.log('Sending airdrop transaction:', {
+        tokenAddress,
+        recipientAddresses,
+        amounts: amounts.map(a => a.toString()),
+        totalNativeAmount: totalNativeAmount.toString()
+      })
+
+      // Call smart contract
+      const txHash = await writeContractAsync({
+        address: airdropContractAddress as `0x${string}`,
+        abi: airdropAbi.abi,
+        functionName: 'sendAirdrop',
+        args: [tokenAddress, recipientAddresses, amounts],
+        value: totalNativeAmount,
+        chainId: U2U_TESTNET_CONFIG.chainId,
+      })
+
+      setPendingTxHash(txHash)
+      toast.success(`Airdrop transaction sent! Hash: ${txHash}`)
       
       // Reset form
-      setRecipients([{ address: '', amount: '' }])
+      setRecipients([])
+      setTotalAmount('0')
       
-      // Refresh history
-      fetchAirdropHistory()
-    }, 2000)
+      // Refresh history after a delay
+      setTimeout(() => {
+        fetchAirdropHistory()
+      }, 5000)
+
+    } catch (error: any) {
+      console.error('Airdrop creation error:', error)
+      toast.error(error.message || 'Failed to create airdrop')
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   // Handle airdrop claim
   const handleClaimAirdrop = async (airdrop: ClaimableAirdrop) => {
-    if (!isConnected) {
+    if (!isConnected || !address) {
       toast.error('Please connect your wallet')
       return
     }
 
-    // Mock claim process
-    toast.success(`Successfully claimed ${airdrop.amount} ${airdrop.tokenSymbol}!`)
-    
-    // Remove claimed airdrop from list
-    setClaimableAirdrops(prev => prev.filter(a => a.airdropId !== airdrop.airdropId))
+    if (!airdropContractAddress) {
+      toast.error('Airdrop contract not available on this network')
+      return
+    }
+
+    try {
+      console.log('Claiming airdrop:', airdrop)
+
+      const txHash = await writeContractAsync({
+        address: airdropContractAddress as `0x${string}`,
+        abi: airdropAbi.abi,
+        functionName: 'claimAirdrop',
+        args: [airdrop.token],
+        chainId: U2U_TESTNET_CONFIG.chainId,
+      })
+
+      toast.success(`Claim transaction sent! Hash: ${txHash}`)
+      
+      // Remove claimed airdrop from list immediately for better UX
+      setClaimableAirdrops(prev => prev.filter(a => a.token !== airdrop.token))
+      
+      // Refresh claimable airdrops after a delay
+      setTimeout(() => {
+        fetchClaimableAirdrops()
+      }, 5000)
+
+    } catch (error: any) {
+      console.error('Claim error:', error)
+      toast.error(error.message || 'Failed to claim airdrop')
+    }
   }
 
   // Handle bulk upload from modal
@@ -442,21 +578,21 @@ export default function Page() {
         </div>
       ) : (
         <div className="grid grid-cols-5 gap-6 px-6 py-3 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-          <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Airdrop ID</div>
+          <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Token Symbol</div>
           <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Token</div>
           <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Amount</div>
-          <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Created</div>
+          <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Status</div>
           <div className="text-sm font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</div>
         </div>
       )}
 
       {claimableAirdrops.map((airdrop) => (
-        <div key={airdrop.airdropId} className="grid grid-cols-5 gap-6 px-6 py-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-300">{airdrop.airdropId}</div>
+        <div key={`${airdrop.token}-${airdrop.tokenSymbol}`} className="grid grid-cols-5 gap-6 px-6 py-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
+          <div className="text-sm font-medium text-gray-600 dark:text-gray-300">{airdrop.tokenSymbol}</div>
           <div className="text-lg font-medium">{airdrop.tokenSymbol}</div>
           <div className="text-lg font-medium">{airdrop.amount} {airdrop.tokenSymbol}</div>
           <div>
-            <span className="text-xs text-gray-500">{formatDate(airdrop.createdAt)}</span>
+            <span className="text-xs text-gray-500">Available</span>
           </div>
           <div className="flex justify-end">
             <button
