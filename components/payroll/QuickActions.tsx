@@ -37,8 +37,8 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onAddEmployee, onBulkUpload
   // Define quick action cards
   const actionCards = [
     {
-      title: "Add Employee",
-      description: "Add a new team member", // Shortened description
+      title: "Add Recipient",
+      description: "Add a new recipient", // Shortened description
       icon: UserPlus,
       onClick: () => {
         onAddEmployee();
@@ -47,7 +47,7 @@ const QuickActions: React.FC<QuickActionsProps> = ({ onAddEmployee, onBulkUpload
     },
     {
       title: "Bulk Upload",
-      description: "Import multiple employees", // Shortened description
+      description: "Import multiple recipients", // Shortened description
       icon: Upload,
       onClick: () => {
         onBulkUpload();
