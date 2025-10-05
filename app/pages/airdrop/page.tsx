@@ -14,6 +14,11 @@ interface AirdropRecipient {
   amount: string;
 }
 
+interface CustomToken {
+  symbol: string;
+  address: string;
+}
+
 interface ClaimableAirdrop {
   token: string;
   tokenSymbol: string;
@@ -41,7 +46,9 @@ export default function Page() {
   const [isMounted, setIsMounted] = useState(false)
   
   // State for Create Airdrop tab
-  const [selectedToken, setSelectedToken] = useState<string>('ETH')
+  const [selectedToken, setSelectedToken] = useState<string>('U2U')
+  const [customTokens, setCustomTokens] = useState<CustomToken[]>([])
+  const [showCustomTokenModal, setShowCustomTokenModal] = useState(false)
   const [recipients, setRecipients] = useState<AirdropRecipient[]>([]) // Start with empty array
   const [totalAmount, setTotalAmount] = useState<string>('0')
   const [isCreating, setIsCreating] = useState(false)
@@ -229,6 +236,35 @@ export default function Page() {
       case 'processing': return 'text-blue-500 bg-blue-50 dark:bg-blue-900/20'
       case 'failed': return 'text-red-500 bg-red-50 dark:bg-red-900/20'
       default: return 'text-gray-500 bg-gray-50 dark:bg-gray-900/20'
+    }
+  }
+
+  // Handle adding custom token
+  const handleAddCustomToken = (symbol: string, address: string) => {
+    // Check if token already exists
+    const exists = customTokens.some(token => 
+      token.symbol.toLowerCase() === symbol.toLowerCase() || 
+      token.address.toLowerCase() === address.toLowerCase()
+    )
+    
+    if (exists) {
+      toast.error('Token already exists')
+      return
+    }
+
+    const newToken = { symbol: symbol.toUpperCase(), address }
+    setCustomTokens(prev => [...prev, newToken])
+    setSelectedToken(newToken.symbol)
+    setShowCustomTokenModal(false)
+    toast.success(`${symbol.toUpperCase()} token added successfully`)
+  }
+
+  // Handle token selection change
+  const handleTokenSelection = (value: string) => {
+    if (value === 'add_token') {
+      setShowCustomTokenModal(true)
+    } else {
+      setSelectedToken(value)
     }
   }
 
@@ -457,14 +493,17 @@ export default function Page() {
               <div className="flex items-center space-x-3">
                 <select
                   value={selectedToken}
-                  onChange={(e) => setSelectedToken(e.target.value)}
+                  onChange={(e) => handleTokenSelection(e.target.value)}
                   className="px-3 py-1.5 text-sm border-none bg-transparent dark:bg-transparent dark:text-white text-black focus:ring-1 focus:ring-blue-500 rounded appearance-none cursor-pointer"
                   style={{ backgroundColor: 'transparent' }}
                 >
-                  <option value="ETH" className="bg-white dark:bg-gray-900 text-black dark:text-white">ETH</option>
-                  <option value="USDC" className="bg-white dark:bg-gray-900 text-black dark:text-white">USDC</option>
-                  <option value="USDT" className="bg-white dark:bg-gray-900 text-black dark:text-white">USDT</option>
-                  <option value="DAI" className="bg-white dark:bg-gray-900 text-black dark:text-white">DAI</option>
+                  <option value="U2U" className="bg-white dark:bg-gray-900 text-black dark:text-white">U2U (Native)</option>
+                  {customTokens.map((token) => (
+                    <option key={token.symbol} value={token.symbol} className="bg-white dark:bg-gray-900 text-black dark:text-white">
+                      {token.symbol}
+                    </option>
+                  ))}
+                  <option value="add_token" className="bg-white dark:bg-gray-900 text-black dark:text-white">+ Add Token</option>
                 </select>
                 <ConnectButton />
               </div>
@@ -581,6 +620,15 @@ export default function Page() {
           onClose={() => setShowBulkUploadModal(false)}
           onUploadSuccess={handleBulkUploadSuccess}
           existingRecipients={recipients}
+        />
+      )}
+
+      {/* Custom Token Modal */}
+      {showCustomTokenModal && (
+        <CustomTokenModal
+          isOpen={showCustomTokenModal}
+          onClose={() => setShowCustomTokenModal(false)}
+          onAddToken={handleAddCustomToken}
         />
       )}
     </div>
@@ -1019,3 +1067,96 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     </div>
   );
 };
+
+// Custom Token Modal Component
+interface CustomTokenModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAddToken: (symbol: string, address: string) => void;
+}
+
+const CustomTokenModal: React.FC<CustomTokenModalProps> = ({ isOpen, onClose, onAddToken }) => {
+  const [symbol, setSymbol] = useState('')
+  const [address, setAddress] = useState('')
+  const [isValid, setIsValid] = useState(false)
+
+  // Validate form
+  useEffect(() => {
+    const isSymbolValid = symbol.trim().length > 0 && symbol.trim().length <= 10
+    const isAddressValid = address.trim().match(/^0x[a-fA-F0-9]{40}$/)
+    setIsValid(isSymbolValid && !!isAddressValid)
+  }, [symbol, address])
+
+  const handleSubmit = () => {
+    if (isValid) {
+      onAddToken(symbol.trim(), address.trim())
+      setSymbol('')
+      setAddress('')
+    }
+  }
+
+  const handleClose = () => {
+    setSymbol('')
+    setAddress('')
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+        <h3 className="text-lg font-semibold text-black dark:text-white mb-4">Add Custom Token</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Token Symbol
+            </label>
+            <input
+              type="text"
+              value={symbol}
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              placeholder="e.g., USDC"
+              maxLength={10}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-black dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Contract Address
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="0x..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-black dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3 mt-6">
+          <button
+            onClick={handleClose}
+            className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 rounded transition-colors duration-200"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid}
+            className={`px-4 py-2 text-sm rounded transition-colors duration-200 ${
+              isValid
+                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Add Token
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
