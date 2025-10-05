@@ -214,7 +214,7 @@ const PaymentsPage: React.FC = () => {
   };
 
   // CSV download handlers
-  const handleCsvDownload = () => {
+  const handleCsvDownload = (): void => {
     const selectedEmployeeData = employees.filter(emp => selectedEmployees.includes(emp.wallet));
     const { amounts } = getRecipientsAndAmounts();
     const amountsStr = amounts.map(amount => amount.toString());
@@ -234,12 +234,12 @@ const PaymentsPage: React.FC = () => {
     processPayment(); // Continue with payment after download
   };
 
-  const handleContinueWithoutCsv = () => {
+  const handleContinueWithoutCsv = (): void => {
     setShowCsvDownloadModal(false);
     processPayment(); // Continue with payment without download
   };
 
-  const handleCloseCsvModal = () => {
+  const handleCloseCsvModal = (): void => {
     setShowCsvDownloadModal(false);
     // Don't process payment if user closes modal
   };

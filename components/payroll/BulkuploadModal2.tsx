@@ -78,14 +78,17 @@ const BulkUploadModal2: React.FC<BulkUploadModal2Props> = ({ isOpen, onClose, on
   };
 
   const downloadTemplate = () => {
-    const headers = ['Name', 'Designation', 'Email', 'Salary (USD)', 'Wallet Address'];
+    // Headers that match what the parser expects (case-insensitive keywords)
+    const headers = ['Name', 'Designation', 'Email', 'Salary', 'Wallet'];
     const sampleData = [
-      ['John Doe', 'Software Engineer', 'john@company.com', '5000', '0x1234567890123456789012345678901234567890'],
-      ['Jane Smith', 'Product Manager', 'jane@company.com', '6000', '0x2345678901234567890123456789012345678901'],
-      ['Bob Johnson', 'Designer', 'bob@company.com', '4500', '0x3456789012345678901234567890123456789012']
+      ['"John Doe"', '"Software Engineer"', '"john.doe@company.com"', '"5000"', '"0x1234567890123456789012345678901234567890"'],
+      ['"Jane Smith"', '"Product Manager"', '"jane.smith@company.com"', '"6000"', '"0x2345678901234567890123456789012345678901"'],
+      ['"Bob Johnson"', '"UI/UX Designer"', '"bob.johnson@company.com"', '"4500"', '"0x3456789012345678901234567890123456789012"'],
+      ['"Alice Brown"', '"DevOps Engineer"', '"alice.brown@company.com"', '"5500"', '"0x4567890123456789012345678901234567890123"'],
+      ['"Charlie Wilson"', '"Marketing Manager"', '"charlie.wilson@company.com"', '"4800"', '"0x5678901234567890123456789012345678901234"']
     ];
     
-    const csvContent = [headers.join(','), ...sampleData.map(row => row.join(','))].join('\\n');
+    const csvContent = [headers.join(','), ...sampleData.map(row => row.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -94,6 +97,7 @@ const BulkUploadModal2: React.FC<BulkUploadModal2Props> = ({ isOpen, onClose, on
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const handleUpload = async () => {

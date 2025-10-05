@@ -13,34 +13,40 @@ import {
 export default function AboutSection() {
     const aboutInfo = {
         title: "PayZoll",
-        tagline: "Web3 Native Financial Infrastructure",
-        description: "PayZoll is your all-in-one financial umbrella, seamlessly blending decentralized and centralized rails into a single, turnkey ecosystem. From on-chain smart-contract payroll, streaming payments, and trustless P2P transfers, to fiat on-ramps/off-ramps, KYC/AML compliance, and AI-powered automation, PayZoll empowers businesses and individuals with the full spectrum of Web3-native and traditional finance services—secure, scalable, and future-proof."
+        tagline: "Decentralized Web3 Payment Infrastructure",
+        description: "PayZoll is a one-platform decentralized Web3 payment infrastructure that empowers businesses and individuals with comprehensive financial solutions. From bulk payouts, airdrops, and DAO payroll to streaming payments, fiat on-ramps/off-ramps, and AI-powered automation, PayZoll provides secure, scalable, and future-proof Web3-native payment services."
     };
 
     const features = [
         {
-            title: "Payroll",
-            description: "Automated, gas-abstracted disbursements that work on-chain or off-chain, eliminating manual overhead and ensuring employees get paid on time in the token of their choice.",
+            title: "Bulk Payouts",
+            description: "Efficiently distribute payments to multiple recipients in a single transaction, reducing gas costs and streamlining large-scale payment operations.",
             icon: <Wallet />,
+            status: "Live"
+        },
+        {
+            title: "Airdrop",
+            description: "Seamlessly distribute tokens to multiple wallets with customizable criteria and automated distribution mechanisms for marketing campaigns and community rewards.",
+            icon: <Award />,
+            status: "Live"
+        },
+        {
+            title: "DAO Payroll",
+            description: "Automated, gas-abstracted disbursements for decentralized organizations, eliminating manual overhead and ensuring contributors get paid on time in their preferred tokens.",
+            icon: <Users />,
             status: "Live"
         },
         {
             title: "Streaming Payments",
             description: "Real-time money flows for freelancers, DAOs, and distributed teams—no more batch cycles or waiting periods, just continuous value transfer whenever and wherever it's needed.",
             icon: <ArrowLeftRight />,
-            status: "Upcoming"
-        },
-        {
-            title: "Secure P2P Transfers",
-            description: "Trust-minimized, recoverable person-to-person transfers with built-in dispute resolution and recovery options, making peer payments reliable and user-friendly.",
-            icon: <Users />,
             status: "Live"
         },
         {
             title: "Fiat On/Off-Ramps",
             description: "Seamless integration with banking rails and fiat bridges—move money in and out of crypto with a single click, backed by institutional liquidity and compliance.",
             icon: <Building />,
-            status: "Live"
+            status: "Upcoming"
         },
         {
             title: "AI-Powered Agents",
@@ -55,16 +61,10 @@ export default function AboutSection() {
             status: "Planned"
         },
         {
-            title: "DAO Governance",
-            description: "Manage treasury and distribution logic via decentralized autonomous organization, ensuring transparent and community-driven financial controls.",
+            title: "Multi-Chain Support",
+            description: "Cross-chain compatibility with support for multiple blockchain networks, providing maximum flexibility and interoperability for Web3 payments.",
             icon: <Lock />,
             status: "Upcoming"
-        },
-        {
-            title: "Multi-Chain Support",
-            description: "Mainnet Live on BNB Chain, Arbitrum, Polygon, and Aptos, with more chains coming soon to provide maximum flexibility and interoperability.",
-            icon: <Award />,
-            status: "Live"
         },
     ];
 
@@ -72,8 +72,8 @@ export default function AboutSection() {
         "Winner – ETHIndia Hackathon",
         "Winner – BNB Chain Hackathon Q4",
         "Winner – Stellar Build Hackathon",
-        "Selected for EduChain OpenCampus incubation program",
-        "Mainnet Live on BNB Chain, Arbitrum, Polygon, and Aptos"
+        "Winner – Pharos Builder Base Camp",
+        "Selected for EduChain OpenCampus incubation program"
     ];
 
     return (
@@ -91,10 +91,10 @@ export default function AboutSection() {
                     <h2 className="text-3xl font-bold mb-8 text-center text-neutral-900 dark:text-white">Our Vision</h2>
                     <div className="bg-neutral-50 dark:bg-neutral-900 p-8 rounded-xl shadow-sm">
                         <p className="text-lg text-neutral-700 dark:text-neutral-300 mb-6">
-                            PayZoll unifies TradFi and DeFi into one Web3-native financial umbrella, offering a seamless experience for both crypto-native projects and traditional enterprises.
+                            PayZoll serves as a comprehensive decentralized Web3 payment infrastructure, providing businesses and DAOs with the tools they need to manage payments efficiently and securely.
                         </p>
                         <p className="text-lg text-neutral-700 dark:text-neutral-300">
-                            Our end-to-end vision is to provide every piece of the financial lifecycle—from on-chain asset acquisition all the way through to fiat settlements—in a single, one-click experience that feels as familiar as your favorite payment app.
+                            Our platform streamlines complex payment operations into simple, automated workflows—from bulk payouts and airdrops to streaming payments and DAO payroll management—all while maintaining the security and transparency of blockchain technology.
                         </p>
                     </div>
                 </div>
@@ -127,7 +127,7 @@ export default function AboutSection() {
                 {/* Team Section */}
                 <div>
                     <h2 className="text-3xl font-bold mb-8 text-center text-neutral-900 dark:text-white">Meet Our Team</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="flex justify-around gap-8 max-w-4xl mx-auto">
                         <TeamMember
                             name="Abhinav Pangaria"
                             role="Co-Founder & Lead Engineer"
@@ -137,11 +137,6 @@ export default function AboutSection() {
                             name="Vaibhav Panwar"
                             role="Founder"
                             description="Business development expert with entrepreneurial experience. Previously managed North-East India operations for an e-commerce startup with 100+ team members."
-                        />
-                        <TeamMember
-                            name="Sarthak Bansal"
-                            role="Founding Engineer"
-                            description="Lead Backend Engineer and P2P Architect with expertise in Solidity, Node.js, MERN stack, auditing and security."
                         />
                     </div>
                 </div>
