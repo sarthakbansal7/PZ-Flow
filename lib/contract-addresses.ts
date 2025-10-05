@@ -5,6 +5,7 @@ export interface ContractAddresses {
   bulkTransfer: string;
   airdrop: string;
   payroll: string;
+  stream: string;
   // Add more contracts here as needed
   // dao?: string;
 }
@@ -23,6 +24,7 @@ export const CONTRACT_ADDRESSES: NetworkContracts = {
     bulkTransfer: "0x071A4FCcEEe657c8d4729F664957e1777f6A719E",
     airdrop: "0x563442Ec415De8444059A46fc09F0F552AE8661a",
     payroll: "0xbb7E1b1Ef5c36fC4aE96879Ea3c4586B68569cAC",
+    stream: "0x463c2b415329e199a936381b09b7499e7E68d7F9",
   },
   
   // Add more networks as needed
@@ -55,6 +57,11 @@ export const getAirdropAddress = (chainId: number): string | undefined => {
 // Helper function to get Payroll contract address
 export const getPayrollAddress = (chainId: number): string | undefined => {
   return getContractAddress(chainId, 'payroll');
+};
+
+// Helper function to get Stream contract address
+export const getStreamAddress = (chainId: number): string | undefined => {
+  return getContractAddress(chainId, 'stream');
 };
 
 export default CONTRACT_ADDRESSES;
