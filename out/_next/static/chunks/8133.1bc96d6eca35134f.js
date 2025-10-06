@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[8133],{48133:(e,t,i)=>{i.d(t,{createPublicClient:()=>c,defineChain:()=>p.x,http:()=>n.L});var n=i(36241),l=i(98078),u=i(62334);function c(e){let{key:t="public",name:i="Public Client"}=e;return(0,l.U)({...e,key:t,name:i,type:"publicClient"}).extend(u.$)}var p=i(22732)}}]);
