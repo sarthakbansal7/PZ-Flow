@@ -2,24 +2,26 @@
 
 import React, { useState, useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount } from 'wagmi'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
+import { parseEther, formatEther } from 'viem'
 import { FileText, Wallet, CreditCard, CheckCircle, Clock, Home, Copy, ExternalLink } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from "react-hot-toast"
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import InvoicesAbi from '../../../../lib/InvoicesAbi.json'
+import { getInvoicesAddress } from '../../../../lib/contract-addresses'
 
 // Types for invoice data
 interface Invoice {
-  id: string;
+  id: bigint;
   name: string;
   details: string;
-  amount: string;
+  amount: bigint;
   creator: string;
   isPaid: boolean;
-  paidBy?: string;
-  paidAt?: string;
-  createdAt: string;
+  paidBy: string;
+  paidAt: bigint;
 }
 
 export default function PayInvoicePage() {
@@ -29,100 +31,137 @@ export default function PayInvoicePage() {
   
   // State management
   const [isMounted, setIsMounted] = useState(false)
-  const [invoice, setInvoice] = useState<Invoice | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [isPaying, setIsPaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   // Wallet connection
   const { address, isConnected } = useAccount()
+  const chainId = useChainId()
+  
+  // Contract hooks
+  const { data: hash, isPending, writeContract } = useWriteContract()
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  })
+  
+  // Get contract address
+  const contractAddress = getInvoicesAddress(chainId)
+  
+  // Debug logs
+  useEffect(() => {
+    console.log('=== DEBUGGING INVOICE FETCH ===')
+    console.log('Invoice ID from URL:', invoiceId)
+    console.log('Chain ID:', chainId)
+    console.log('Contract Address:', contractAddress)
+    console.log('BigInt Invoice ID:', BigInt(invoiceId || '0'))
+    console.log('Query enabled:', !!contractAddress && !!invoiceId && invoiceId !== '0')
+  }, [invoiceId, chainId, contractAddress])
+  
+  // Read invoice details from contract
+  const { 
+    data: invoiceData, 
+    isLoading: isLoadingInvoice, 
+    error: invoiceError,
+    refetch: refetchInvoice 
+  } = useReadContract({
+    address: contractAddress as `0x${string}`,
+    abi: InvoicesAbi.abi,
+    functionName: 'getInvoice',
+    args: [BigInt(invoiceId || '0')],
+    query: {
+      enabled: !!contractAddress && !!invoiceId && invoiceId !== '0',
+    },
+  })
+  
+  // Debug contract call result
+  useEffect(() => {
+    console.log('=== CONTRACT CALL RESULT ===')
+    console.log('Invoice Data:', invoiceData)
+    console.log('Is Loading:', isLoadingInvoice)
+    console.log('Error:', invoiceError)
+  }, [invoiceData, isLoadingInvoice, invoiceError])
+  
+  // Parse invoice data
+  const invoice: Invoice | null = invoiceData ? (() => {
+    const data = invoiceData as readonly [bigint, string, string, bigint, string, boolean, string, bigint]
+    return {
+      id: data[0],
+      name: data[1],
+      details: data[2],
+      amount: data[3],
+      creator: data[4],
+      isPaid: data[5],
+      paidBy: data[6],
+      paidAt: data[7],
+    }
+  })() : null
 
   // Set mounted state after hydration
   useEffect(() => {
     setIsMounted(true)
-    if (invoiceId) {
-      fetchInvoice(invoiceId)
+  }, [])
+  
+  // Handle transaction confirmation
+  useEffect(() => {
+    if (isConfirmed) {
+      toast.success('Payment successful!')
+      setIsPaying(false)
+      // Refresh invoice data
+      refetchInvoice()
     }
-  }, [invoiceId])
+  }, [isConfirmed, refetchInvoice])
+  
+  // Handle payment errors
+  useEffect(() => {
+    if (invoiceError) {
+      console.log('Invoice Error Details:', invoiceError)
+      setError('Invoice not found or does not exist')
+    } else {
+      setError(null)
+    }
+  }, [invoiceError])
 
-  // Mock function to fetch invoice details (replace with actual contract call)
-  const fetchInvoice = async (id: string) => {
-    setIsLoading(true)
-    setError(null)
-    
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock invoice data - replace with actual contract call
-      const mockInvoices: { [key: string]: Invoice } = {
-        '1': {
-          id: '1',
-          name: 'Web Development Services',
-          details: 'Frontend development for e-commerce platform including responsive design, payment integration, and user authentication.',
-          amount: '2.5',
-          creator: '0x742F35Cc6C4D0f2f8A78a0D8B2A7D3E4F5A6B7C8',
-          isPaid: true,
-          paidBy: '0x123F35Cc6C4D0f2f8A78a0D8B2A7D3E4F5A6B7C9',
-          paidAt: new Date(Date.now() - 86400000).toISOString(),
-          createdAt: new Date(Date.now() - 172800000).toISOString()
-        },
-        '2': {
-          id: '2',
-          name: 'Smart Contract Audit',
-          details: 'Comprehensive security audit for DeFi protocol including vulnerability assessment and gas optimization recommendations.',
-          amount: '5.0',
-          creator: '0x742F35Cc6C4D0f2f8A78a0D8B2A7D3E4F5A6B7C8',
-          isPaid: false,
-          createdAt: new Date(Date.now() - 43200000).toISOString()
-        },
-        '3': {
-          id: '3',
-          name: 'Design Consultation',
-          details: 'UI/UX design consultation for mobile app including wireframes, prototypes, and user experience analysis.',
-          amount: '1.2',
-          creator: '0x742F35Cc6C4D0f2f8A78a0D8B2A7D3E4F5A6B7C8',
-          isPaid: false,
-          createdAt: new Date().toISOString()
-        }
-      }
-      
-      const foundInvoice = mockInvoices[id]
-      if (foundInvoice) {
-        setInvoice(foundInvoice)
-      } else {
-        setError('Invoice not found')
-      }
-    } catch (err) {
-      setError('Failed to load invoice')
-    } finally {
-      setIsLoading(false)
+  // Handle case where contract address is not found
+  useEffect(() => {
+    if (!contractAddress && chainId) {
+      console.log('No contract address found for chain ID:', chainId)
+      setError(`Contract not deployed on current network (Chain ID: ${chainId}). Please switch to U2U Testnet.`)
     }
-  }
+  }, [contractAddress, chainId])
 
   // Handle payment
   const handlePayInvoice = async () => {
-    if (!invoice || !isConnected) return
-    
+    if (!invoice || !contractAddress) {
+      toast.error('Invoice not found')
+      return
+    }
+
+    if (invoice.isPaid) {
+      toast.error('Invoice is already paid')
+      return
+    }
+
+    if (!isConnected || !address) {
+      toast.error('Please connect your wallet')
+      return
+    }
+
     setIsPaying(true)
     
     try {
-      // Simulate payment processing (replace with actual contract call)
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Call payInvoice contract function with the exact amount in U2U
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: InvoicesAbi.abi,
+        functionName: 'payInvoice',
+        args: [invoice.id],
+        value: invoice.amount, // Send U2U amount
+      })
       
-      // Update invoice status
-      const updatedInvoice = {
-        ...invoice,
-        isPaid: true,
-        paidBy: address,
-        paidAt: new Date().toISOString()
-      }
-      
-      setInvoice(updatedInvoice)
-      toast.success('Payment successful!')
-    } catch (error) {
-      toast.error('Payment failed. Please try again.')
-    } finally {
+      toast.loading('Processing payment... Please confirm the transaction')
+    } catch (error: any) {
+      console.error('Error paying invoice:', error)
+      toast.error('Failed to process payment')
       setIsPaying(false)
     }
   }
@@ -134,8 +173,9 @@ export default function PayInvoicePage() {
   }
 
   // Format date nicely
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (timestamp: bigint) => {
+    if (timestamp === BigInt(0)) return 'Not set'
+    return new Date(Number(timestamp) * 1000).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -145,8 +185,8 @@ export default function PayInvoicePage() {
   }
 
   // Format address for display
-  const formatAddress = (addr: string) => {
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  const formatAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
   // Render a placeholder during server rendering and initial hydration
@@ -177,7 +217,7 @@ export default function PayInvoicePage() {
         </div>
 
         {/* Main Content */}
-        {isLoading ? (
+        {isLoadingInvoice ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mb-4"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading invoice details...</p>
@@ -204,7 +244,7 @@ export default function PayInvoicePage() {
                 <div>
                   <h2 className="text-2xl font-bold text-black dark:text-white mb-2">{invoice.name}</h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Created on {formatDate(invoice.createdAt)}
+                    Invoice ID: #{invoice.id.toString()}
                   </p>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -241,7 +281,7 @@ export default function PayInvoicePage() {
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-black dark:text-white mb-2">Amount</h3>
                 <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {invoice.amount} ETH
+                  {formatEther(invoice.amount)} U2U
                 </div>
               </div>
 
@@ -277,7 +317,7 @@ export default function PayInvoicePage() {
                         </code>
                         <button
                           onClick={() => {
-                            navigator.clipboard.writeText(invoice.paidBy!)
+                            navigator.clipboard.writeText(invoice.paidBy)
                             toast.success('Address copied!')
                           }}
                           className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
@@ -320,31 +360,31 @@ export default function PayInvoicePage() {
                         <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                         <div>
                           <p className="font-medium text-blue-800 dark:text-blue-300">Payment Amount</p>
-                          <p className="text-2xl font-bold text-blue-900 dark:text-blue-200">{invoice.amount} ETH</p>
+                          <p className="text-2xl font-bold text-blue-900 dark:text-blue-200">{formatEther(invoice.amount)} U2U</p>
                         </div>
                       </div>
                     </div>
 
                     <button
                       onClick={handlePayInvoice}
-                      disabled={isPaying}
+                      disabled={isPaying || isPending || isConfirming}
                       className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center text-lg"
                     >
-                      {isPaying ? (
+                      {isPaying || isPending || isConfirming ? (
                         <>
                           <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
-                          Processing Payment...
+                          {isPending ? 'Confirming...' : isConfirming ? 'Processing...' : 'Processing Payment...'}
                         </>
                       ) : (
                         <>
                           <CreditCard className="h-5 w-5 mr-3" />
-                          Pay {invoice.amount} ETH
+                          Pay {formatEther(invoice.amount)} U2U
                         </>
                       )}
                     </button>
 
                     <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                      Payment will be processed securely on the blockchain. Make sure you have sufficient ETH balance and gas fees.
+                      Payment will be processed securely on the blockchain. Make sure you have sufficient U2U balance and gas fees.
                     </p>
                   </div>
                 )}
