@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, useWriteContract, useReadContract, useChainId, useWaitForTransactionReceipt } from 'wagmi'
+import { useAccount, useWriteContract, useReadContract, useChainId, useWaitForTransactionReceipt, usePublicClient } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { FileText, Wallet, Plus, Eye, Copy, CheckCircle, Clock, Home, ExternalLink, Edit, Trash2, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -61,6 +61,8 @@ export default function InvoicesPage() {
   
   // Get contract address
   const contractAddress = getInvoicesAddress(chainId)
+  // Wagmi public client (viem-backed) for readContract and lower-level access
+  const publicClient = usePublicClient()
   
   // Debug network information
   useEffect(() => {
@@ -115,33 +117,118 @@ export default function InvoicesPage() {
   // Fetch individual invoice details
   const fetchInvoiceDetails = async (invoiceId: bigint) => {
     if (!contractAddress) return null
-    
     try {
-      // For now, since we don't have an API endpoint, we'll use the direct mapping approach
-      // This is a limitation of wagmi where we can't dynamically create useReadContract hooks
-      // In a production environment, you'd want to set up a proper backend API or use multicall
-      
-      return {
-        id: invoiceId,
-        name: `Invoice #${invoiceId.toString()}`,
-        details: 'Click to view full details',
-        amount: parseEther('1.0'), // Default amount - will be updated when contract read is implemented
-        creator: address || '',
-        isPaid: false,
-        paidBy: '0x0000000000000000000000000000000000000000',
-        paidAt: BigInt(0)
+      // First try using the viem-backed public client (recommended)
+      if (publicClient && typeof (publicClient as any).readContract === 'function') {
+        // First try the public mapping getter 'invoices' (auto-generated getter)
+        try {
+          const result: any = await (publicClient as any).readContract({
+            address: contractAddress as `0x${string}`,
+            abi: InvoicesAbi.abi,
+            functionName: 'invoices',
+            args: [invoiceId],
+          })
+
+          // If successful, it's usually an array-like tuple with the struct fields
+          return {
+            id: result[0] as bigint,
+            name: result[1] as string,
+            details: result[2] as string,
+            amount: result[3] as bigint,
+            creator: result[4] as string,
+            isPaid: result[5] as boolean,
+            paidBy: result[6] as string,
+            paidAt: result[7] as bigint,
+          }
+        } catch (e) {
+          console.debug('publicClient.readContract(invoices) failed, trying getInvoice', e)
+        }
+
+        // Fallback: try getInvoice (some ABIs return a tuple wrapped as a single output)
+        try {
+          const result2: any = await (publicClient as any).readContract({
+            address: contractAddress as `0x${string}`,
+            abi: InvoicesAbi.abi,
+            functionName: 'getInvoice',
+            args: [invoiceId],
+          })
+
+          // viem may return a struct as a single array or object; normalize
+          const r = Array.isArray(result2) && result2.length > 1 ? result2 : result2[0] ?? result2
+          return {
+            id: r[0] as bigint,
+            name: r[1] as string,
+            details: r[2] as string,
+            amount: r[3] as bigint,
+            creator: r[4] as string,
+            isPaid: r[5] as boolean,
+            paidBy: r[6] as string,
+            paidAt: r[7] as bigint,
+          }
+        } catch (e) {
+          console.debug('publicClient.readContract(getInvoice) failed, will use ethers fallback', e)
+        }
       }
-    } catch (error) {
-      console.error(`Error fetching invoice ${invoiceId}:`, error)
-      return {
-        id: invoiceId,
-        name: `Invoice #${invoiceId.toString()}`,
-        details: 'Unable to load details',
-        amount: BigInt(0),
-        creator: address || '',
-        isPaid: false,
-        paidBy: '0x0000000000000000000000000000000000000000',
-        paidAt: BigInt(0)
+
+      throw new Error('publicClient not available')
+    } catch (viemError) {
+      console.warn('viem readContract failed, attempting ethers fallback decode', viemError)
+
+      try {
+        // Dynamically import ethers to avoid top-level bundling issues
+        const ethers = await import('ethers')
+
+        // Build an ethers provider from the publicClient transport URL if available
+        const transportUrl = (publicClient as any)?.transport?.url
+        const provider = transportUrl ? new ethers.JsonRpcProvider(transportUrl) : new ethers.JsonRpcProvider()
+
+        const iface = new ethers.Interface(InvoicesAbi.abi as any)
+        const calldata = iface.encodeFunctionData('getInvoice', [invoiceId])
+
+        const raw = await provider.call({ to: contractAddress as `0x${string}`, data: calldata })
+        console.debug('ethers fallback raw call data:', raw)
+
+        let decoded: any
+        try {
+          decoded = iface.decodeFunctionResult('getInvoice', raw)
+        } catch (dErr) {
+          console.debug('ethers decode getInvoice failed, trying alternative signature', dErr)
+          // Try decoding as if the function returned a single tuple (some ABIs encode like this)
+          try {
+            const altIface = new ethers.Interface([
+              'function getInvoice(uint256) view returns (tuple(uint256 id,string name,string details,uint256 amount,address creator,bool isPaid,address paidBy,uint256 paidAt))'
+            ])
+            decoded = altIface.decodeFunctionResult('getInvoice', raw)
+            // If decoded is a single-element array wrapping the tuple, unwrap
+            if (Array.isArray(decoded) && decoded.length === 1) decoded = decoded[0]
+          } catch (altErr) {
+            console.error('ethers alternative decode also failed', altErr)
+            throw altErr
+          }
+        }
+
+        return {
+          id: decoded[0] as bigint,
+          name: decoded[1] as string,
+          details: decoded[2] as string,
+          amount: decoded[3] as bigint,
+          creator: decoded[4] as string,
+          isPaid: decoded[5] as boolean,
+          paidBy: decoded[6] as string,
+          paidAt: decoded[7] as bigint,
+        }
+      } catch (ethersError) {
+        console.error(`Both viem and ethers fallback failed for invoice ${invoiceId.toString()}:`, ethersError)
+        return {
+          id: invoiceId,
+          name: `Invoice #${invoiceId.toString()}`,
+          details: 'Unable to load details',
+          amount: BigInt(0),
+          creator: address || '',
+          isPaid: false,
+          paidBy: '0x0000000000000000000000000000000000000000',
+          paidAt: BigInt(0)
+        }
       }
     }
   }
@@ -412,61 +499,42 @@ export default function InvoicesPage() {
       ) : (
         <div className="bg-white/50 dark:bg-gray-900/20 backdrop-blur-sm rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           {/* Table Header */}
-          <div className="grid grid-cols-6 gap-6 px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-transparent backdrop-blur-sm">
+          <div className="grid grid-cols-7 gap-6 px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-transparent backdrop-blur-sm">
             <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Invoice ID</div>
             <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Name</div>
-            <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Amount (ETH)</div>
+            <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Details</div>
+            <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Amount (U2U)</div>
             <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Status</div>
-            <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Created</div>
+            <div className="text-sm font-semibold text-gray-600 dark:text-gray-300">Payee</div>
             <div className="text-sm font-semibold text-gray-600 dark:text-gray-300 text-right">Actions</div>
           </div>
           
           {/* Table Rows */}
           <div className="max-h-96 overflow-y-auto">
             {invoices.map((invoice) => (
-              <div key={invoice.id} className="grid grid-cols-6 gap-6 px-6 py-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                <div className="text-sm font-mono text-gray-800 dark:text-gray-200">
-                  #{invoice.id}
-                </div>
-                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                  {invoice.name}
-                </div>
-                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                  {formatEther(invoice.amount)} U2U
-                </div>
+              <div key={invoice.id} className="grid grid-cols-7 gap-6 px-6 py-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
+                <div className="text-sm font-mono text-gray-800 dark:text-gray-200">#{invoice.id}</div>
+                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{invoice.name}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 truncate">{invoice.details}</div>
+                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">{formatEther(invoice.amount)} U2U</div>
                 <div>
                   <span className={`text-xs font-medium ${getStatusColor(invoice.isPaid)}`}>
                     {invoice.isPaid ? (
-                      <div className="flex items-center">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Paid
-                      </div>
+                      <div className="flex items-center"><CheckCircle className="h-3 w-3 mr-1" />Paid</div>
                     ) : (
-                      <div className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Pending
-                      </div>
+                      <div className="flex items-center"><Clock className="h-3 w-3 mr-1" />Pending</div>
                     )}
                   </span>
                 </div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  {formatDate(invoice.paidAt)}
-                </div>
+                <div className="text-sm text-gray-800 dark:text-gray-200 font-mono">{invoice.isPaid ? invoice.paidBy : 'Pending'}</div>
                 <div className="flex justify-end space-x-2">
                   {!invoice.isPaid && (
-                    <button
-                      onClick={() => copyPaymentLink(invoice.id)}
-                      className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors rounded"
-                      title="Copy payment link"
-                    >
+                    <button onClick={() => copyPaymentLink(invoice.id)} className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors rounded" title="Copy payment link">
                       <Copy className="h-4 w-4" />
                     </button>
                   )}
                   <Link href={`/pages/pay/${invoice.id.toString()}`}>
-                    <button
-                      className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors rounded"
-                      title="View invoice"
-                    >
+                    <button className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors rounded" title="View invoice">
                       <Eye className="h-4 w-4" />
                     </button>
                   </Link>

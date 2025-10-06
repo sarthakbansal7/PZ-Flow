@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, usePublicClient } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
 import { FileText, Wallet, CreditCard, CheckCircle, Clock, Home, Copy, ExternalLink } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -81,20 +81,156 @@ export default function PayInvoicePage() {
     console.log('Error:', invoiceError)
   }, [invoiceData, isLoadingInvoice, invoiceError])
   
-  // Parse invoice data
-  const invoice: Invoice | null = invoiceData ? (() => {
-    const data = invoiceData as readonly [bigint, string, string, bigint, string, boolean, string, bigint]
-    return {
-      id: data[0],
-      name: data[1],
-      details: data[2],
-      amount: data[3],
-      creator: data[4],
-      isPaid: data[5],
-      paidBy: data[6],
-      paidAt: data[7],
+  // Wagmi public client for robust reads (viem-backed)
+  const publicClient = usePublicClient()
+
+  // Normalized on-chain invoice state
+  const [onChainInvoice, setOnChainInvoice] = useState<Invoice | null>(null)
+
+  // Normalize invoiceData when available, otherwise run fallback reads
+  useEffect(() => {
+    if (invoiceData) {
+      try {
+        const data = invoiceData as readonly [bigint, string, string, bigint, string, boolean, string, bigint]
+        setOnChainInvoice({
+          id: data[0],
+          name: data[1],
+          details: data[2],
+          amount: data[3],
+          creator: data[4],
+          isPaid: data[5],
+          paidBy: data[6],
+          paidAt: data[7],
+        })
+        return
+      } catch (e) {
+        console.warn('Failed to normalize invoiceData, will try fallback read', e)
+      }
     }
-  })() : null
+
+    const fetchInvoiceOnChain = async (idBig: bigint) => {
+      if (!contractAddress) return null
+      try {
+        if (publicClient && typeof (publicClient as any).readContract === 'function') {
+          try {
+            const res: any = await (publicClient as any).readContract({
+              address: contractAddress as `0x${string}`,
+              abi: InvoicesAbi.abi,
+              functionName: 'invoices',
+              args: [idBig],
+            })
+            if (res) {
+              setOnChainInvoice({
+                id: res[0] as bigint,
+                name: res[1] as string,
+                details: res[2] as string,
+                amount: res[3] as bigint,
+                creator: res[4] as string,
+                isPaid: res[5] as boolean,
+                paidBy: res[6] as string,
+                paidAt: res[7] as bigint,
+              })
+              return
+            }
+          } catch (e) {
+            console.debug('publicClient.readContract(invoices) failed, trying getInvoice', e)
+          }
+
+          try {
+            const res2: any = await (publicClient as any).readContract({
+              address: contractAddress as `0x${string}`,
+              abi: InvoicesAbi.abi,
+              functionName: 'getInvoice',
+              args: [idBig],
+            })
+            const r = Array.isArray(res2) && res2.length > 1 ? res2 : res2[0] ?? res2
+            setOnChainInvoice({
+              id: r[0] as bigint,
+              name: r[1] as string,
+              details: r[2] as string,
+              amount: r[3] as bigint,
+              creator: r[4] as string,
+              isPaid: r[5] as boolean,
+              paidBy: r[6] as string,
+              paidAt: r[7] as bigint,
+            })
+            return
+          } catch (e) {
+            console.debug('publicClient.readContract(getInvoice) failed, will try ethers fallback', e)
+          }
+        }
+
+        // ethers fallback + window.ethereum eth_call fallback
+        try {
+          const ethers = await import('ethers')
+          const transportUrl = (publicClient as any)?.transport?.url
+          const provider = transportUrl ? new ethers.JsonRpcProvider(transportUrl) : new ethers.JsonRpcProvider()
+          const iface = new ethers.Interface(InvoicesAbi.abi as any)
+          const calldata = iface.encodeFunctionData('getInvoice', [idBig])
+          let raw: string | null = null
+          try {
+            raw = await provider.call({ to: contractAddress as `0x${string}`, data: calldata })
+            console.debug('ethers fallback raw call data (provider.call):', raw)
+          } catch (callErr) {
+            console.debug('provider.call failed, attempting window.ethereum eth_call if available', callErr)
+            try {
+              const eth = (window as any)?.ethereum
+              if (eth && typeof eth.request === 'function') {
+                const resp = await eth.request({ method: 'eth_call', params: [{ to: contractAddress, data: calldata }, 'latest'] })
+                raw = resp as string
+                console.debug('ethers fallback raw call data (window.ethereum.eth_call):', raw)
+              }
+            } catch (ethCallErr) {
+              console.debug('window.ethereum eth_call attempt failed', ethCallErr)
+            }
+          }
+
+          if (!raw) throw new Error('No raw call data available from provider or wallet')
+
+          let decoded: any
+          try {
+            decoded = iface.decodeFunctionResult('getInvoice', raw)
+          } catch (dErr) {
+            console.debug('ethers decode getInvoice failed, trying alternative signature', dErr)
+            const altIface = new ethers.Interface([
+              'function getInvoice(uint256) view returns (tuple(uint256 id,string name,string details,uint256 amount,address creator,bool isPaid,address paidBy,uint256 paidAt))'
+            ])
+            decoded = altIface.decodeFunctionResult('getInvoice', raw)
+            if (Array.isArray(decoded) && decoded.length === 1) decoded = decoded[0]
+          }
+
+          setOnChainInvoice({
+            id: decoded[0] as bigint,
+            name: decoded[1] as string,
+            details: decoded[2] as string,
+            amount: decoded[3] as bigint,
+            creator: decoded[4] as string,
+            isPaid: decoded[5] as boolean,
+            paidBy: decoded[6] as string,
+            paidAt: decoded[7] as bigint,
+          })
+          return
+        } catch (ethersErr) {
+          console.error('ethers fallback failed for getInvoice:', ethersErr)
+        }
+      } catch (err) {
+        console.error('Error fetching invoice on-chain:', err)
+      }
+      return null
+    }
+
+    (async () => {
+      try {
+        const idBig = BigInt(invoiceId || '0')
+        await fetchInvoiceOnChain(idBig)
+      } catch (e) {
+        console.error('fetchInvoiceOnChain error', e)
+      }
+    })()
+  }, [invoiceData, invoiceError, contractAddress, invoiceId, publicClient])
+
+  // keep old variable name used in JSX
+  const invoice = onChainInvoice
 
   // Set mounted state after hydration
   useEffect(() => {
