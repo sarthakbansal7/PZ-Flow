@@ -25,9 +25,27 @@ interface Invoice {
 }
 
 export default function PayInvoicePage() {
-  // Get invoice ID from URL params
+  // Get invoice ID and network from URL params
   const params = useParams()
-  const invoiceId = params?.id as string
+  const urlParam = params?.id as string
+  
+  // Parse invoice ID and network suffix from URL parameter
+  const parseUrlParam = (param: string) => {
+    if (!param) return { invoiceId: '', networkSuffix: 't', targetChainId: 2484 }
+    
+    const lastChar = param.slice(-1).toLowerCase()
+    if (lastChar === 'm' || lastChar === 't') {
+      const invoiceId = param.slice(0, -1)
+      const networkSuffix = lastChar
+      const targetChainId = networkSuffix === 'm' ? 39 : 2484 // 39 for mainnet, 2484 for testnet
+      return { invoiceId, networkSuffix, targetChainId }
+    } else {
+      // Legacy format without network suffix - default to testnet
+      return { invoiceId: param, networkSuffix: 't', targetChainId: 2484 }
+    }
+  }
+  
+  const { invoiceId, networkSuffix, targetChainId } = parseUrlParam(urlParam)
   
   // State management
   const [isMounted, setIsMounted] = useState(false)
@@ -44,20 +62,23 @@ export default function PayInvoicePage() {
     hash,
   })
   
-  // Get contract address
-  const contractAddress = getInvoicesAddress(chainId)
+  // Get contract address based on URL network parameter
+  const contractAddress = getInvoicesAddress(targetChainId)
   
   // Debug logs
   useEffect(() => {
     console.log('=== DEBUGGING INVOICE FETCH ===')
-    console.log('Invoice ID from URL:', invoiceId)
-    console.log('Chain ID:', chainId)
+    console.log('URL Parameter:', urlParam)
+    console.log('Parsed Invoice ID:', invoiceId)
+    console.log('Network Suffix:', networkSuffix)
+    console.log('Target Chain ID:', targetChainId)
+    console.log('Current Chain ID:', chainId)
     console.log('Contract Address:', contractAddress)
     console.log('BigInt Invoice ID:', BigInt(invoiceId || '0'))
     console.log('Query enabled:', !!contractAddress && !!invoiceId && invoiceId !== '0')
-  }, [invoiceId, chainId, contractAddress])
+  }, [urlParam, invoiceId, networkSuffix, targetChainId, chainId, contractAddress])
   
-  // Read invoice details from contract
+  // Read invoice details from contract using the target network
   const { 
     data: invoiceData, 
     isLoading: isLoadingInvoice, 
@@ -68,6 +89,7 @@ export default function PayInvoicePage() {
     abi: InvoicesAbi.abi,
     functionName: 'getInvoice',
     args: [BigInt(invoiceId || '0')],
+    chainId: targetChainId, // Use the network specified in URL
     query: {
       enabled: !!contractAddress && !!invoiceId && invoiceId !== '0',
     },
@@ -86,6 +108,14 @@ export default function PayInvoicePage() {
 
   // Normalized on-chain invoice state
   const [onChainInvoice, setOnChainInvoice] = useState<Invoice | null>(null)
+  
+  // Network validation
+  const isCorrectNetwork = chainId === targetChainId
+  const getNetworkName = (chainId: number) => {
+    return chainId === 39 ? 'U2U Mainnet' : chainId === 2484 ? 'U2U Testnet' : `Chain ${chainId}`
+  }
+  const targetNetworkName = getNetworkName(targetChainId)
+  const currentNetworkName = getNetworkName(chainId)
 
   // Normalize invoiceData when available, otherwise run fallback reads
   useEffect(() => {
@@ -316,6 +346,11 @@ export default function PayInvoicePage() {
       return
     }
 
+    if (!isCorrectNetwork) {
+      toast.error(`Please switch to ${targetNetworkName} to pay this invoice`)
+      return
+    }
+
     setIsPaying(true)
     
     try {
@@ -385,6 +420,11 @@ export default function PayInvoicePage() {
           <p className="text-gray-600 dark:text-gray-400">
             {invoiceId ? `Invoice #22018${invoiceId}` : 'Loading invoice...'}
           </p>
+          {invoiceId && (
+            <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
+              Network: {targetNetworkName}
+            </p>
+          )}
         </div>
 
         {/* Main Content */}
@@ -408,6 +448,24 @@ export default function PayInvoicePage() {
           </div>
         ) : invoice ? (
           <div className="space-y-6">
+            {/* Network Warning (if wrong network) */}
+            {isConnected && !isCorrectNetwork && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mr-3">⚠️</div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                      Wrong Network Detected
+                    </h3>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+                      This invoice is on <strong>{targetNetworkName}</strong> but you're connected to <strong>{currentNetworkName}</strong>. 
+                      Please switch to {targetNetworkName} to pay this invoice.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Invoice Details Card */}
             <div className="bg-white/50 dark:bg-gray-900/20 backdrop-blur-sm rounded-xl p-8 border border-gray-200 dark:border-gray-700">
               {/* Invoice Header */}
@@ -538,10 +596,18 @@ export default function PayInvoicePage() {
 
                     <button
                       onClick={handlePayInvoice}
-                      disabled={isPaying || isPending || isConfirming}
-                      className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center text-lg"
+                      disabled={isPaying || isPending || isConfirming || !isCorrectNetwork}
+                      className={`w-full py-4 font-medium rounded-lg transition-colors duration-200 flex items-center justify-center text-lg ${
+                        !isCorrectNetwork 
+                          ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                          : 'bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white'
+                      }`}
                     >
-                      {isPaying || isPending || isConfirming ? (
+                      {!isCorrectNetwork ? (
+                        <>
+                          ⚠️ Switch to {targetNetworkName}
+                        </>
+                      ) : isPaying || isPending || isConfirming ? (
                         <>
                           <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
                           {isPending ? 'Confirming...' : isConfirming ? 'Processing...' : 'Processing Payment...'}
@@ -555,7 +621,11 @@ export default function PayInvoicePage() {
                     </button>
 
                     <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                      Payment will be processed securely on the blockchain. Make sure you have sufficient U2U balance and gas fees.
+                      {!isCorrectNetwork ? (
+                        <>You must be connected to {targetNetworkName} to pay this invoice.</>
+                      ) : (
+                        <>Payment will be processed securely on the blockchain. Make sure you have sufficient U2U balance and gas fees.</>
+                      )}
                     </p>
                   </div>
                 )}

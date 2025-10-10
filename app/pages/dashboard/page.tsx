@@ -31,6 +31,8 @@ import AirdropPage from '../airdrop/page'
 import StreamingPage from '../streaming/page'
 import BulkPayoutPage from '../bulk/page'
 import PaymentsPage from '../dao/page'
+import { PaymentConfigProvider, usePaymentConfig } from '@/context/paymentConfigContext'
+import ConfigurePayModal from '@/components/payroll/ConfigurePayModal'
 
 interface SidebarItem {
   id: string
@@ -72,7 +74,7 @@ const sidebarItems: SidebarItem[] = [
   }
 ]
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [isMounted, setIsMounted] = useState(false)
   const [activeService, setActiveService] = useState('bulk')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -81,6 +83,14 @@ export default function DashboardPage() {
   // Wallet connection
   const { address, isConnected } = useAccount()
   const chainId = useChainId()
+  
+  // Payment configuration
+  const { 
+    config, 
+    updateConfig, 
+    showConfigModal, 
+    setShowConfigModal 
+  } = usePaymentConfig()
   
   // Set mounted state after hydration and check mobile
   useEffect(() => {
@@ -124,6 +134,21 @@ export default function DashboardPage() {
 
   return (
     <div className="relative min-h-screen w-screen dark:text-white text-black">
+      {/* Global Configuration Modal */}
+      {showConfigModal && (
+        <ConfigurePayModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onExchangeRateUpdate={(rate: number, tokenSymbol: string) => {
+            updateConfig({
+              exchangeRate: rate,
+              selectedTokenSymbol: tokenSymbol,
+            });
+            // Configuration updated silently
+          }}
+        />
+      )}
+
       {/* Home button - only show when sidebar collapsed */}
       {sidebarCollapsed && (
         <div className="absolute top-4 left-4 z-50">
@@ -268,4 +293,12 @@ export default function DashboardPage() {
       </div>
     </div>
   )
+}
+
+export default function DashboardPage() {
+  return (
+    <PaymentConfigProvider>
+      <DashboardContent />
+    </PaymentConfigProvider>
+  );
 }

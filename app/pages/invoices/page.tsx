@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useWriteContract, useReadContract, useChainId, useWaitForTransactionReceipt, usePublicClient } from 'wagmi'
 import { parseEther, formatEther } from 'viem'
-import { FileText, Wallet, Plus, Eye, Copy, CheckCircle, Clock, Home, ExternalLink, Edit, Trash2, RefreshCw } from 'lucide-react'
+import { FileText, Wallet, Plus, Eye, Copy, CheckCircle, Clock, Home, ExternalLink, Edit, Trash2, RefreshCw, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from "react-hot-toast"
 import Link from 'next/link'
+import { usePaymentConfig } from '@/context/paymentConfigContext'
+import ConfigurePayModal from '@/components/payroll/ConfigurePayModal'
 import InvoicesAbi from '../../../lib/InvoicesAbi.json'
 import { getInvoicesAddress } from '../../../lib/contract-addresses'
 
@@ -50,6 +52,14 @@ export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  
+  // Payment configuration context
+  const { 
+    config: paymentConfig, 
+    updateConfig, 
+    showConfigModal, 
+    setShowConfigModal 
+  } = usePaymentConfig();
   
   // Wallet connection
   const { address, isConnected } = useAccount()
@@ -371,7 +381,9 @@ export default function InvoicesPage() {
 
   // Copy payment link to clipboard
   const copyPaymentLink = (invoiceId: bigint) => {
-    const paymentUrl = `${window.location.origin}/pages/pay/${invoiceId.toString()}`
+    // Add network suffix: 'm' for mainnet (39), 't' for testnet (2484)
+    const networkSuffix = chainId === 39 ? 'm' : chainId === 2484 ? 't' : 't' // default to testnet
+    const paymentUrl = `${window.location.origin}/pages/pay/${invoiceId.toString()}${networkSuffix}`
     navigator.clipboard.writeText(paymentUrl)
     toast.success('Payment link copied to clipboard!')
   }
@@ -624,7 +636,7 @@ export default function InvoicesPage() {
                       <Copy className="h-4 w-4" />
                     </button>
                   )}
-                  <Link href={`/pages/pay/${invoice.id.toString()}`}>
+                  <Link href={`/pages/pay/${invoice.id.toString()}${chainId === 39 ? 'm' : chainId === 2484 ? 't' : 't'}`}>
                     <button className="p-2 text-green-500 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors rounded" title="View invoice">
                       <Eye className="h-4 w-4" />
                     </button>
@@ -663,63 +675,16 @@ export default function InvoicesPage() {
                   <Plus className="h-4 w-4 mr-2" />
                   Create Invoice
                 </button>
-                <div className="connect-button-light">
-                  <ConnectButton />
-                </div>
-                <style jsx>{`
-                  .connect-button-light :global([data-rk]) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] *) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] > div) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] button) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] div) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  @media (prefers-color-scheme: dark) {
-                    .connect-button-light :global([data-rk]) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] *) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] > div) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] button) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] div) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                  }
-                `}</style>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale:0.98 }}
+                  onClick={() => setShowConfigModal(true)}
+                  className="relative py-2 px-3 lg:py-2.5 lg:px-4 rounded-lg backdrop-blur-md bg-gray-200/30 dark:bg-white/10 border border-gray-300/50 dark:border-white/20 shadow-md hover:shadow-lg transition-all duration-300 hover:bg-gray-300/40 dark:hover:bg-gradient-to-r dark:hover:from-gray-600/30 dark:hover:to-gray-700/30 hover:border-gray-400/60 dark:hover:border-white/30 flex items-center justify-center gap-2"
+                  title="Configure Payments"
+                >
+                  <Settings className="h-4 w-4 lg:h-5 lg:w-5 text-black dark:text-white" />
+                  <span className="hidden lg:inline font-medium text-sm whitespace-nowrap text-black dark:text-white">Configure</span>
+                </motion.button>
               </div>
             </div>
           </div>
@@ -793,6 +758,21 @@ export default function InvoicesPage() {
             </div>
           </motion.div>
         </div>
+      )}
+
+      {/* Configure Payment Modal */}
+      {showConfigModal && (
+        <ConfigurePayModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onExchangeRateUpdate={(rate: number, tokenSymbol: string) => {
+            updateConfig({
+              exchangeRate: rate,
+              selectedTokenSymbol: tokenSymbol,
+            });
+            // Configuration updated silently
+          }}
+        />
       )}
 
       {/* Create Invoice Modal */}
