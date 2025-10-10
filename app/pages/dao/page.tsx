@@ -8,12 +8,12 @@ import EmployeeTable2 from "@/components/payroll/EmployeeTable2";
 import AddEmployeeModal2 from "@/components/payroll/AddEmployeeModal2";
 import BulkuploadModal2 from "@/components/payroll/BulkuploadModal2";
 import { CsvDownloadModal } from "@/components/payroll/CsvDownloadModal";
+import TransactionSuccessModal from "@/components/ui/TransactionSuccessModal";
 import { Employee, PayrollData } from "@/lib/interfaces";
 import { generatePaymentCsv } from "@/lib/csv-utils";
 import { toast } from "react-hot-toast";
 import { parseUnits } from 'ethers';
 import { getPayrollAddress, NATIVE_TOKEN_ADDRESS } from '@/lib/contract-addresses';
-
 import { allMainnetChains as chains, NATIVE_ADDRESS } from '@/lib/evm-chains-mainnet';
 import { tokensPerMainnetChain as tokens } from '@/lib/evm-tokens-mainnet';
 import payrollAbi from '@/lib/PayrollAbi.json';
@@ -30,7 +30,7 @@ import { set } from "react-hook-form";
 
 const PaymentsPage: React.FC = () => {
   // Original state
-  const [showConfigurePayModal, setShowConfigurePayModal] = useState(true);
+  const [showConfigurePayModal, setShowConfigurePayModal] = useState(false); // Changed to false
   const [exchangeRate, setExchangeRate] = useState(1);
   const [selectedTokenSymbol, setSelectedTokenSymbol] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -54,6 +54,15 @@ const PaymentsPage: React.FC = () => {
   const [selectedToken, setSelectedToken] = useState(tokens[chains[0].id][0]);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
   const [showCsvDownloadModal, setShowCsvDownloadModal] = useState(false);
+  
+  // Success modal state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successModalData, setSuccessModalData] = useState({
+    transactionHash: '',
+    totalAmount: '',
+    recipientCount: 0,
+    selectedRecipients: [] as Array<{ name: string; amount: string }>
+  });
 
   // Wallet and transaction hooks
   const { address, isConnected, chainId } = useAccount();
@@ -182,6 +191,40 @@ const PaymentsPage: React.FC = () => {
       }
     };
   }, [txError]); // Re-run this effect whenever txError changes
+
+  // Effect to detect successful transactions and show success modal
+  useEffect(() => {
+    if (isTxSuccess && txHash && selectedEmployees.length > 0) {
+      console.log('Transaction successful, showing success modal');
+      
+      // Calculate transaction details
+      const totalAmount = calculateTotalAmount();
+      const selectedEmployeeData = employees
+        .filter(emp => selectedEmployees.includes(emp.wallet))
+        .map(emp => ({
+          name: emp.name,
+          amount: usdToToken(emp.salary)
+        }));
+
+      // Set success modal data
+      setSuccessModalData({
+        transactionHash: txHash,
+        totalAmount: usdToToken(totalAmount.toString()),
+        recipientCount: selectedEmployees.length,
+        selectedRecipients: selectedEmployeeData
+      });
+      
+      // Show success modal
+      setShowSuccessModal(true);
+      
+      // Clear transaction states
+      setTxHash(undefined);
+      setCustomTxHash(undefined);
+      setApprovalTxHash(undefined);
+      setShowPaymentStatus(false);
+      setSelectedEmployees([]);
+    }
+  }, [isTxSuccess, txHash, selectedEmployees.length]);
 
 
 
@@ -356,11 +399,8 @@ const PaymentsPage: React.FC = () => {
       return;
     }
 
-    // Show success toast instead of backend logging
-    toast.success("Payment transaction completed successfully");
-    setTxHash(undefined);
-    setCustomTxHash(undefined);
-    setApprovalTxHash(undefined);
+    // Transaction hash will be handled by success modal useEffect
+    console.log('Payroll transaction logged successfully');
   };
 
   // Main transaction handling function
@@ -588,6 +628,19 @@ const PaymentsPage: React.FC = () => {
           selectedEmployees={employees.filter(emp => selectedEmployees.includes(emp.wallet))}
           selectedToken={selectedToken}
           totalAmount={selectedEmployees.length > 0 ? calculateTotalAmount().toString() : '0'}
+        />
+
+        {/* Transaction Success Modal */}
+        <TransactionSuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          transactionHash={successModalData.transactionHash}
+          transactionType="payroll"
+          totalAmount={successModalData.totalAmount}
+          recipientCount={successModalData.recipientCount}
+          tokenSymbol={selectedToken.symbol}
+          explorerUrl={getExplorerUrl(successModalData.transactionHash as `0x${string}`)}
+          selectedRecipients={successModalData.selectedRecipients}
         />
       </div>
     </div>
