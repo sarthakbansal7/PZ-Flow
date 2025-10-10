@@ -9,6 +9,8 @@ import { motion } from 'framer-motion'
 import { toast } from "react-hot-toast"
 import Link from 'next/link'
 import { getStreamAddress, NATIVE_TOKEN_ADDRESS } from '@/lib/contract-addresses'
+import { usePaymentConfig } from '@/context/paymentConfigContext'
+import ConfigurePayModal from '@/components/payroll/ConfigurePayModal'
 
 // Stream Contract ABI (essential functions only)
 const STREAM_CONTRACT_ABI = [
@@ -166,6 +168,14 @@ export default function Page() {
   const [allowCancellation, setAllowCancellation] = useState<boolean>(true)
   const [enablePartialClaims, setEnablePartialClaims] = useState<boolean>(true)
   
+  // Payment configuration context
+  const { 
+    config: paymentConfig, 
+    updateConfig, 
+    showConfigModal, 
+    setShowConfigModal 
+  } = usePaymentConfig();
+  
   // State for Claim Stream tab
   const [claimableStreams, setClaimableStreams] = useState<ClaimableStream[]>([])
   const [isCheckingClaims, setIsCheckingClaims] = useState(false)
@@ -320,7 +330,7 @@ export default function Page() {
     }, 1000)
   }
 
-  // Direct contract reading function with proper U2U testnet setup
+  // Direct contract reading function with proper U2U network setup
   const readContractData = async (functionName: 'getStream' | 'getRecipientStreams' | 'getClaimableAmount' | 'getTotalClaimable', args: any[] = []) => {
     if (!streamContractAddress) return null
     
@@ -328,29 +338,57 @@ export default function Page() {
       // Import viem for direct contract reading
       const { createPublicClient, http, defineChain } = await import('viem')
       
-      // Define U2U testnet chain
-      const u2uTestnet = defineChain({
-        id: 2484,
-        name: 'U2U Testnet',
-        network: 'u2u-testnet',
-        nativeCurrency: {
-          decimals: 18,
-          name: 'U2U',
-          symbol: 'U2U',
-        },
-        rpcUrls: {
-          default: { http: ['https://rpc-nebulas-testnet.uniultra.xyz'] },
-          public: { http: ['https://rpc-nebulas-testnet.uniultra.xyz'] },
-        },
-      })
+      // Determine which chain configuration to use based on current chainId
+      let chainConfig
+      let rpcUrl
       
-      // Create public client for U2U testnet
+      if (chainId === 39) {
+        // U2U Mainnet
+        chainConfig = {
+          id: 39,
+          name: 'U2U Mainnet',
+          network: 'u2u-mainnet',
+          nativeCurrency: {
+            decimals: 18,
+            name: 'U2U',
+            symbol: 'U2U',
+          },
+          rpcUrls: {
+            default: { http: ['https://rpc-mainnet.uniultra.xyz'] },
+            public: { http: ['https://rpc-mainnet.uniultra.xyz'] },
+          },
+        }
+        rpcUrl = 'https://rpc-mainnet.uniultra.xyz'
+      } else {
+        // U2U Testnet (default)
+        chainConfig = {
+          id: 2484,
+          name: 'U2U Testnet',
+          network: 'u2u-testnet',
+          nativeCurrency: {
+            decimals: 18,
+            name: 'U2U',
+            symbol: 'U2U',
+          },
+          rpcUrls: {
+            default: { http: ['https://rpc-nebulas-testnet.uniultra.xyz'] },
+            public: { http: ['https://rpc-nebulas-testnet.uniultra.xyz'] },
+          },
+        }
+        rpcUrl = 'https://rpc-nebulas-testnet.uniultra.xyz'
+      }
+      
+      // Define the chain
+      const u2uChain = defineChain(chainConfig)
+      
+      // Create public client for the appropriate U2U network
       const publicClient = createPublicClient({
-        chain: u2uTestnet,
+        chain: u2uChain,
         transport: http(),
       })
       
       console.log(`Reading contract function: ${functionName} with args:`, args)
+      console.log(`Using network: ${chainConfig.name} (Chain ID: ${chainConfig.id})`)
       
       const result = await publicClient.readContract({
         address: streamContractAddress as `0x${string}`,
@@ -859,10 +897,7 @@ export default function Page() {
       return
     }
 
-    if (!streamName.trim()) {
-      toast.error('Please enter a stream name')
-      return
-    }
+    // Stream name is now optional - no validation required
 
     try {
       setIsCreating(true)
@@ -1537,63 +1572,16 @@ export default function Page() {
                     </svg>
                   </div>
                 </div>
-                <div className="connect-button-light">
-                  <ConnectButton />
-                </div>
-                <style jsx>{`
-                  .connect-button-light :global([data-rk]) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] *) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] > div) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] button) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] div) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  @media (prefers-color-scheme: dark) {
-                    .connect-button-light :global([data-rk]) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] *) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] > div) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] button) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] div) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                  }
-                `}</style>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowConfigModal(true)}
+                  className="relative py-2 px-3 lg:py-2.5 lg:px-4 rounded-lg backdrop-blur-md bg-gray-200/30 dark:bg-white/10 border border-gray-300/50 dark:border-white/20 shadow-md hover:shadow-lg transition-all duration-300 hover:bg-gray-300/40 dark:hover:bg-gradient-to-r dark:hover:from-gray-600/30 dark:hover:to-gray-700/30 hover:border-gray-400/60 dark:hover:border-white/30 flex items-center justify-center gap-2"
+                  title="Configure Payments"
+                >
+                  <Settings className="h-4 w-4 lg:h-5 lg:w-5 text-black dark:text-white" />
+                  <span className="hidden lg:inline font-medium text-sm whitespace-nowrap text-black dark:text-white">Configure</span>
+                </motion.button>
               </div>
             </div>
             
@@ -1847,6 +1835,21 @@ export default function Page() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Configure Payment Modal */}
+      {showConfigModal && (
+        <ConfigurePayModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onExchangeRateUpdate={(rate: number, tokenSymbol: string) => {
+            updateConfig({
+              exchangeRate: rate,
+              selectedTokenSymbol: tokenSymbol,
+            });
+            // Configuration updated silently
+          }}
+        />
       )}
 
       {/* Custom Token Modal */}
