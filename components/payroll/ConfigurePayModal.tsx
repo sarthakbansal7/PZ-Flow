@@ -525,7 +525,7 @@ const ConfigurePayModal: React.FC<ConfigurePayModalProps> = ({
                       <div className="flex-1">
                         <p className="text-black dark:text-white font-medium text-sm sm:text-base mb-1.5 sm:mb-2">About Exchange Rates</p>
                         <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed">
-                          Rates are fetched from Chainlink price feeds. Salaries are converted from USD to the selected token using this rate.
+                          Rates are fetched from Chainlink price feeds.
                         </p>
                       </div>
                     </div>

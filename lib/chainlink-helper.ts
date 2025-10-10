@@ -281,7 +281,7 @@ export async function getExchangeRate(
 
         // For other tokens, return reasonable fallback based on symbol
         const fallbackRates: { [key: string]: number } = {
-            'U2U': 0.5,      // 1 USD ≈ 0.5 U2U (fallback rate)
+            'U2U': 161.127636,      // 1 USD ≈ 0.006 U2U (fallback rate)
             'ETH': 0.001,    // 1 USD ≈ 0.0005 ETH
             'BNB': 0.001,     // 1 USD ≈ 0.003 BNB
             'tBNB': 0.001,    // Testnet BNB same as BNB
@@ -301,7 +301,7 @@ export async function getExchangeRate(
         }
 
         const emergencyFallbackRates: { [key: string]: number } = {
-            'U2U': 0.5,      // 1 USD ≈ 0.5 U2U (emergency fallback)
+            'U2U': 161.127636,      // 1 USD ≈ 0.006 U2U (emergency fallback)
             'ETH': 0.001,    // 1 USD ≈ 0.0005 ETH
             'BNB': 0.001,     // 1 USD ≈ 0.003 BNB
             'tBNB': 0.001,    // Testnet BNB same as BNB

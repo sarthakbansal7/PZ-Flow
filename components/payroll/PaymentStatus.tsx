@@ -209,9 +209,9 @@ const PaymentStatus = ({
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-full bg-gradient-to-br overflow-scroll dark:from-gray-900 dark:to-black/95 backdrop-blur-xl border 
-                       border-[#a5b4fc]/20 rounded-xl p-4 md:p-5 lg:p-6 transition-all 
-                       shadow-lg shadow-black/60 hover:border-[#60a5fa]/30 h-full dark:text-white text-black"
+            className="max-w-full bg-gradient-to-br overflow-scroll from-white to-gray-50/95 dark:from-gray-900 dark:to-black/95 backdrop-blur-xl border 
+                       border-gray-200/50 dark:border-[#a5b4fc]/20 rounded-xl p-4 md:p-5 lg:p-6 transition-all 
+                       shadow-lg shadow-gray-300/60 dark:shadow-black/60 hover:border-gray-300/70 dark:hover:border-[#60a5fa]/30 h-full text-black dark:text-white"
         >
             <div className="flex items-center gap-3 mb-5">
                 <div className={`p-2 rounded-md ${statusState === "processing" ? "bg-amber-500/20 animate-pulse" :
@@ -312,17 +312,17 @@ const PaymentStatus = ({
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="mt-4 p-4 bg-gray-900/80 backdrop-blur-sm rounded-xl border border-[#a5b4fc]/20"
+                        className="mt-4 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-[#a5b4fc]/20"
                     >
-                        <p className="text-gray-400 mb-2 text-sm ">Approval Transaction:</p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm ">Approval Transaction:</p>
                         <div className="flex items-center justify-between gap-2">
-                            <div className="dark:text-white  text-black text-xs truncate bg-gray-900/80 p-2 rounded-xl flex-1 overflow-x-auto scrollbar-hide">
+                            <div className="text-gray-900 dark:text-white text-xs truncate bg-gray-100/80 dark:bg-gray-900/80 p-2 rounded-xl flex-1 overflow-x-auto scrollbar-hide">
                                 {approvalTxHash}
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => copyToClipboard(approvalTxHash)}
-                                    className="text-[#93c5fd] hover:text-[#60a5fa] p-2 bg-gray-900/80 rounded-xl transition-colors"
+                                    className="text-blue-600 dark:text-[#93c5fd] hover:text-blue-700 dark:hover:text-[#60a5fa] p-2 bg-gray-100/80 dark:bg-gray-900/80 rounded-xl transition-colors"
                                     title="Copy to clipboard"
                                 >
                                     {copySuccess ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -331,7 +331,7 @@ const PaymentStatus = ({
                                     href={getExplorerUrl(approvalTxHash)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[#93c5fd] hover:text-[#60a5fa] p-2 bg-gray-900/80 rounded-xl transition-colors"
+                                    className="text-blue-600 dark:text-[#93c5fd] hover:text-blue-700 dark:hover:text-[#60a5fa] p-2 bg-gray-100/80 dark:bg-gray-900/80 rounded-xl transition-colors"
                                     title="View on explorer"
                                 >
                                     <ExternalLink className="w-4 h-4" />
@@ -346,17 +346,17 @@ const PaymentStatus = ({
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="mt-4 p-4 bg-gray-900/80 backdrop-blur-sm rounded-xl border border-[#a5b4fc]/20"
+                        className="mt-4 p-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-[#a5b4fc]/20"
                     >
-                        <p className="text-gray-400 mb-2 text-sm ">Transaction Hash:</p>
+                        <p className="text-gray-600 dark:text-gray-400 mb-2 text-sm ">Transaction Hash:</p>
                         <div className="flex items-center justify-between gap-2">
-                            <div className="text-[#F2F2F2] text-xs truncate bg-gray-900/80 p-2 rounded-xl flex-1 overflow-x-auto scrollbar-hide">
+                            <div className="text-gray-900 dark:text-[#F2F2F2] text-xs truncate bg-gray-100/80 dark:bg-gray-900/80 p-2 rounded-xl flex-1 overflow-x-auto scrollbar-hide">
                                 {txHash}
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => copyToClipboard(txHash)}
-                                    className="text-[#93c5fd] hover:text-[#60a5fa] p-2 bg-gray-900/80 rounded-xl transition-colors"
+                                    className="text-blue-600 dark:text-[#93c5fd] hover:text-blue-700 dark:hover:text-[#60a5fa] p-2 bg-gray-100/80 dark:bg-gray-900/80 rounded-xl transition-colors"
                                     title="Copy to clipboard"
                                 >
                                     {copySuccess ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -365,7 +365,7 @@ const PaymentStatus = ({
                                     href={getExplorerUrl(txHash)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[#93c5fd] hover:text-[#60a5fa] p-2 bg-gray-900/80 rounded-xl transition-colors"
+                                    className="text-blue-600 dark:text-[#93c5fd] hover:text-blue-700 dark:hover:text-[#60a5fa] p-2 bg-gray-100/80 dark:bg-gray-900/80 rounded-xl transition-colors"
                                     title="View on explorer"
                                 >
                                     <ExternalLink className="w-4 h-4" />
@@ -396,10 +396,10 @@ const PaymentStatus = ({
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="flex flex-col items-center justify-center p-8 dark:bg-gray-900/80  bg:white/90 backdrop-blur-sm rounded-xl border border-[#a5b4fc]/20"
+                        className="flex flex-col items-center justify-center p-8 bg-white/90 dark:bg-gray-900/80 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-[#a5b4fc]/20"
                     >
                         <Clock className="w-10 h-10 text-gray-400 opacity-50 mb-2" />
-                        <p className="text-gray-400 text-center">
+                        <p className="text-gray-500 dark:text-gray-400 text-center">
                             No active transactions
                         </p>
                     </motion.div>
