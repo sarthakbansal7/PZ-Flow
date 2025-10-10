@@ -105,6 +105,13 @@ function DashboardContent() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // Show configuration modal on dashboard load if not configured
+  useEffect(() => {
+    if (isMounted && !config.isConfigured) {
+      setShowConfigModal(true)
+    }
+  }, [isMounted, config.isConfigured, setShowConfigModal])
+
   // Render a placeholder during server rendering and initial hydration
   if (!isMounted) {
     return (

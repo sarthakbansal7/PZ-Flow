@@ -32,7 +32,7 @@ const PaymentConfigContext = createContext<PaymentConfigContextType | undefined>
 
 export const PaymentConfigProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<PaymentConfig>(defaultConfig);
-  const [showConfigModal, setShowConfigModal] = useState(true); // Show on first load
+  const [showConfigModal, setShowConfigModal] = useState(false); // Only show when explicitly requested
 
   const updateConfig = (newConfig: Partial<PaymentConfig>) => {
     setConfig(prev => ({
