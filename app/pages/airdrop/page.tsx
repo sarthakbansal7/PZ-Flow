@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
 import { parseUnits, formatUnits } from 'viem'
-import { Wallet, Gift, Coins, Plus, Minus, RefreshCw, Home, ExternalLink, Upload, Download, Edit, Trash2 } from 'lucide-react'
+import { Wallet, Gift, Coins, Plus, Minus, RefreshCw, Home, ExternalLink, Upload, Download, Edit, Trash2, Settings } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from "react-hot-toast"
 import Link from 'next/link'
+import { usePaymentConfig } from '@/context/paymentConfigContext'
+import ConfigurePayModal from '@/components/payroll/ConfigurePayModal'
 import { getAirdropAddress, NATIVE_TOKEN_ADDRESS } from '@/lib/contract-addresses'
 import airdropAbi from '@/lib/AirdropAbi.json'
 
@@ -64,6 +66,14 @@ export default function Page() {
   // State for Created Airdrops (History)
   const [createdAirdrops, setCreatedAirdrops] = useState<CreatedAirdrop[]>([])
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
+  
+  // Payment configuration context
+  const { 
+    config: paymentConfig, 
+    updateConfig, 
+    showConfigModal, 
+    setShowConfigModal 
+  } = usePaymentConfig();
   
   // Wallet connection
   const { address, isConnected } = useAccount()
@@ -656,63 +666,16 @@ export default function Page() {
                     </svg>
                   </div>
                 </div>
-                <div className="connect-button-light">
-                  <ConnectButton />
-                </div>
-                <style jsx>{`
-                  .connect-button-light :global([data-rk]) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] *) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] > div) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] button) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  .connect-button-light :global([data-rk] div) {
-                    background-color: white !important;
-                    border-color: #e5e7eb !important;
-                    color: black !important;
-                  }
-                  @media (prefers-color-scheme: dark) {
-                    .connect-button-light :global([data-rk]) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] *) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] > div) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] button) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                    .connect-button-light :global([data-rk] div) {
-                      background-color: #1f2937 !important;
-                      border-color: #374151 !important;
-                      color: white !important;
-                    }
-                  }
-                `}</style>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowConfigModal(true)}
+                  className="relative py-2 px-3 lg:py-2.5 lg:px-4 rounded-lg backdrop-blur-md bg-gray-200/30 dark:bg-white/10 border border-gray-300/50 dark:border-white/20 shadow-md hover:shadow-lg transition-all duration-300 hover:bg-gray-300/40 dark:hover:bg-gradient-to-r dark:hover:from-gray-600/30 dark:hover:to-gray-700/30 hover:border-gray-400/60 dark:hover:border-white/30 flex items-center justify-center gap-2"
+                  title="Configure Payments"
+                >
+                  <Settings className="h-4 w-4 lg:h-5 lg:w-5 text-black dark:text-white" />
+                  <span className="hidden lg:inline font-medium text-sm whitespace-nowrap text-black dark:text-white">Configure</span>
+                </motion.button>
               </div>
             </div>
             
@@ -864,6 +827,21 @@ export default function Page() {
           onClose={() => setShowBulkUploadModal(false)}
           onUploadSuccess={handleBulkUploadSuccess}
           existingRecipients={recipients}
+        />
+      )}
+
+      {/* Configure Payment Modal */}
+      {showConfigModal && (
+        <ConfigurePayModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onExchangeRateUpdate={(rate: number, tokenSymbol: string) => {
+            updateConfig({
+              exchangeRate: rate,
+              selectedTokenSymbol: tokenSymbol,
+            });
+            // Configuration updated silently
+          }}
         />
       )}
 
@@ -1241,7 +1219,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               </div>
               <div>
                 <span className="text-sm text-gray-600 dark:text-gray-400">Network:</span>
-                <p className="font-semibold text-lg dark:text-white">Ethereum</p>
+                <p className="font-semibold text-lg dark:text-white">U2U</p>
               </div>
             </div>
           </div>
