@@ -137,7 +137,7 @@ function StreamingPage() {
   const [isMounted, setIsMounted] = useState(false)
   
   // State for Create Stream tab
-  const [selectedToken, setSelectedToken] = useState<string>('U2U')
+  const [selectedToken, setSelectedToken] = useState<string>('FLOW')
   const [customTokens, setCustomTokens] = useState<CustomToken[]>([])
   const [showCustomTokenModal, setShowCustomTokenModal] = useState(false)
   const [recipients, setRecipients] = useState<StreamRecipient[]>([])
@@ -197,13 +197,13 @@ function StreamingPage() {
     console.log('=== STREAMING NETWORK DEBUG ===')
     console.log('Chain ID:', chainId)
     console.log('Stream Contract Address:', streamContractAddress)
-    console.log('Is Mainnet (39):', chainId === 39)
-    console.log('Is Testnet (2484):', chainId === 2484)
+    console.log('Is Flow Mainnet (747):', chainId === 747)
+    console.log('Is Flow Testnet (545):', chainId === 545)
   }, [chainId, streamContractAddress])
   
   // Check if contract is available on current network
   const isContractAvailable = !!streamContractAddress
-  const networkName = chainId === 39 ? 'U2U Mainnet' : chainId === 2484 ? 'U2U Testnet' : 'Unknown Network'
+  const networkName = chainId === 747 ? 'Flow EVM Mainnet' : chainId === 545 ? 'Flow EVM Testnet' : 'Unknown Network'
   const { writeContract, data: hash, error, isPending } = useWriteContract()
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
 
@@ -306,7 +306,7 @@ function StreamingPage() {
         {
           streamId: 'STR001',
           token: '0x0000000000000000000000000000000000000000',
-          tokenSymbol: 'U2U',
+          tokenSymbol: 'FLOW',
           totalAmount: '5.0',
           recipientCount: 3,
           duration: '24',
@@ -330,7 +330,7 @@ function StreamingPage() {
     }, 1000)
   }
 
-  // Direct contract reading function with proper U2U network setup
+  // Direct contract reading function with proper Flow EVM network setup
   const readContractData = async (functionName: 'getStream' | 'getRecipientStreams' | 'getClaimableAmount' | 'getTotalClaimable', args: any[] = []) => {
     if (!streamContractAddress) return null
     
@@ -338,52 +338,28 @@ function StreamingPage() {
       // Import viem for direct contract reading
       const { createPublicClient, http, defineChain } = await import('viem')
       
-      // Determine which chain configuration to use based on current chainId
-      let chainConfig
-      let rpcUrl
-      
-      if (chainId === 39) {
-        // U2U Mainnet
-        chainConfig = {
-          id: 39,
-          name: 'U2U Mainnet',
-          network: 'u2u-mainnet',
-          nativeCurrency: {
-            decimals: 18,
-            name: 'U2U',
-            symbol: 'U2U',
-          },
-          rpcUrls: {
-            default: { http: ['https://rpc-mainnet.uniultra.xyz'] },
-            public: { http: ['https://rpc-mainnet.uniultra.xyz'] },
-          },
-        }
-        rpcUrl = 'https://rpc-mainnet.uniultra.xyz'
-      } else {
-        // U2U Testnet (default)
-        chainConfig = {
-          id: 2484,
-          name: 'U2U Testnet',
-          network: 'u2u-testnet',
-          nativeCurrency: {
-            decimals: 18,
-            name: 'U2U',
-            symbol: 'U2U',
-          },
-          rpcUrls: {
-            default: { http: ['https://rpc-nebulas-testnet.uniultra.xyz'] },
-            public: { http: ['https://rpc-nebulas-testnet.uniultra.xyz'] },
-          },
-        }
-        rpcUrl = 'https://rpc-nebulas-testnet.uniultra.xyz'
+      // Flow EVM Testnet configuration
+      const chainConfig = {
+        id: 545,
+        name: 'Flow EVM Testnet',
+        network: 'flow-testnet',
+        nativeCurrency: {
+          decimals: 18,
+          name: 'FLOW',
+          symbol: 'FLOW',
+        },
+        rpcUrls: {
+          default: { http: ['https://testnet.evm.nodes.onflow.org'] },
+          public: { http: ['https://testnet.evm.nodes.onflow.org'] },
+        },
       }
       
       // Define the chain
-      const u2uChain = defineChain(chainConfig)
+      const flowChain = defineChain(chainConfig)
       
-      // Create public client for the appropriate U2U network
+      // Create public client for Flow EVM Testnet
       const publicClient = createPublicClient({
-        chain: u2uChain,
+        chain: flowChain,
         transport: http(),
       })
       
@@ -460,7 +436,7 @@ function StreamingPage() {
       const currentTime = BigInt(Math.floor(Date.now() / 1000))
       
       // Determine token symbol
-      const tokenSymbol = token === NATIVE_TOKEN_ADDRESS ? 'U2U' : 
+      const tokenSymbol = token === NATIVE_TOKEN_ADDRESS ? 'FLOW' : 
         customTokens.find(t => t.address.toLowerCase() === token.toLowerCase())?.symbol || 'UNKNOWN'
       
       // Determine status
@@ -613,7 +589,7 @@ function StreamingPage() {
         const flowRatePerHour = durationInHours > 0 ? totalAmountInEther / durationInHours : 0
         
         // Determine token symbol
-        const tokenSymbol = token === NATIVE_TOKEN_ADDRESS ? 'U2U' : 
+        const tokenSymbol = token === NATIVE_TOKEN_ADDRESS ? 'FLOW' : 
           customTokens.find(t => t.address.toLowerCase() === token.toLowerCase())?.symbol || 'UNKNOWN'
         
         // Determine status
@@ -906,7 +882,7 @@ function StreamingPage() {
       const addresses = validRecipients.map(r => r.address as `0x${string}`)
       const amounts = validRecipients.map(r => {
         // Use 18 decimals for native token, or get from token contract
-        const decimals = selectedToken === 'U2U' ? 18 : 18 // You can extend this for different tokens
+        const decimals = selectedToken === 'FLOW' ? 18 : 18 // You can extend this for different tokens
         return parseUnits(r.amount, decimals)
       })
       const durations = validRecipients.map(r => {
@@ -914,8 +890,8 @@ function StreamingPage() {
         return BigInt(Math.round(durationInHours * 3600)) // Convert hours to seconds
       })
       
-      // Determine token address - use native address for U2U, otherwise use custom token address
-      const tokenAddress = selectedToken === 'U2U' ? NATIVE_TOKEN_ADDRESS : 
+      // Determine token address - use native address for FLOW, otherwise use custom token address
+      const tokenAddress = selectedToken === 'FLOW' ? NATIVE_TOKEN_ADDRESS : 
         (customTokens.find(t => t.symbol === selectedToken)?.address || NATIVE_TOKEN_ADDRESS)
       
       // Calculate total amount for ETH value (only needed for native token)

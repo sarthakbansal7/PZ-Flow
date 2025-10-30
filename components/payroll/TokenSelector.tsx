@@ -18,7 +18,7 @@ interface TokenSelectorProps {
     onExchangeRateChange: (rate: number) => void;
 }
 
-const U2U_CHAIN_ID = 39;
+const FLOW_TESTNET_CHAIN_ID = 545;
 
 const TokenSelector = ({
     tokens,
@@ -35,10 +35,10 @@ const TokenSelector = ({
     const [fallbackBalance, setFallbackBalance] = useState<string | null>(null);
     const [fallbackError, setFallbackError] = useState<Error | null>(null);
 
-    // Check if we're on U2U chain
-    const isU2UChain = chainId === U2U_CHAIN_ID;
+    // Check if we're on Flow testnet chain
+    const isFlowTestnetChain = chainId === FLOW_TESTNET_CHAIN_ID;
 
-    // Only enable wagmi hook if NOT on U2U chain
+    // Only enable wagmi hook if NOT on Flow testnet chain
     const {
         data: balance,
         isLoading: isBalanceLoading,
@@ -51,8 +51,8 @@ const TokenSelector = ({
             : (selectedToken?.address as `0x${string}`),
         chainId: chainId,
         query: {
-            // Disable the hook for U2U chain
-            enabled: isConnected && !!selectedToken && !!address && !isU2UChain,
+            // Disable the hook for Flow testnet chain
+            enabled: isConnected && !!selectedToken && !!address && !isFlowTestnetChain,
             retry: 3,
             retryDelay: 1000
         }
@@ -90,9 +90,9 @@ const TokenSelector = ({
             ? parseFloat(fallbackBalance).toFixed(4)
             : '0';
 
-    // For U2U chain, fetch directly with ethers whenever relevant dependencies change
+    // For Flow testnet chain, fetch directly with ethers whenever relevant dependencies change
     useEffect(() => {
-        if (isU2UChain && isConnected && address && selectedToken && !fallbackBalance && !isFallbackLoading) {
+        if (isFlowTestnetChain && isConnected && address && selectedToken && !fallbackBalance && !isFallbackLoading) {
             setIsFallbackLoading(true);
             setFallbackError(null);
 
@@ -102,17 +102,17 @@ const TokenSelector = ({
                 })
                 .catch(err => {
                     setFallbackError(err as Error);
-                    console.error("Error fetching U2U chain balance:", err);
+                    console.error("Error fetching Flow testnet chain balance:", err);
                 })
                 .finally(() => {
                     setIsFallbackLoading(false);
                 });
         }
-    }, [isU2UChain, isConnected, address, selectedToken, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
+    }, [isFlowTestnetChain, isConnected, address, selectedToken, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
 
-    // Effect for non-U2U chains when wagmi hook fails
+    // Effect for non-Flow testnet chains when wagmi hook fails
     useEffect(() => {
-        if (!isU2UChain && balanceError && !fallbackBalance && !isFallbackLoading) {
+        if (!isFlowTestnetChain && balanceError && !fallbackBalance && !isFallbackLoading) {
             setIsFallbackLoading(true);
             setFallbackError(null);
 
@@ -127,7 +127,7 @@ const TokenSelector = ({
                     setIsFallbackLoading(false);
                 });
         }
-    }, [isU2UChain, balanceError, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
+    }, [isFlowTestnetChain, balanceError, fetchBalanceWithEthers, fallbackBalance, isFallbackLoading]);
 
     // Reset fallback data when token changes
     useEffect(() => {
@@ -163,8 +163,8 @@ const TokenSelector = ({
         setFallbackBalance(null);
         setFallbackError(null);
 
-        if (isU2UChain) {
-            // For U2U, directly trigger ethers fetch by resetting state
+        if (isFlowTestnetChain) {
+            // For Flow testnet, directly trigger ethers fetch by resetting state
             setIsFallbackLoading(true);
             fetchBalanceWithEthers()
                 .then(result => {
@@ -182,18 +182,18 @@ const TokenSelector = ({
         }
     };
 
-    // Effect to fetch balance when token/chain changes (for non-U2U chains)
+    // Effect to fetch balance when token/chain changes (for non-Flow testnet chains)
     useEffect(() => {
-        if (isConnected && selectedToken && address && !isU2UChain) {
+        if (isConnected && selectedToken && address && !isFlowTestnetChain) {
             refetchBalance();
         }
-    }, [selectedToken?.address, refetchBalance, isConnected, address, isU2UChain]);
+    }, [selectedToken?.address, refetchBalance, isConnected, address, isFlowTestnetChain]);
 
     // Determine loading state based on active fetch method
-    const isAnyBalanceLoading = (isU2UChain ? isFallbackLoading : (isBalanceLoading || isFallbackLoading));
+    const isAnyBalanceLoading = (isFlowTestnetChain ? isFallbackLoading : (isBalanceLoading || isFallbackLoading));
 
-    // Error state - for U2U we only check fallback error, for others we check both
-    const hasRealBalanceError = isU2UChain ? fallbackError : (balanceError && fallbackError);
+    // Error state - for Flow testnet we only check fallback error, for others we check both
+    const hasRealBalanceError = isFlowTestnetChain ? fallbackError : (balanceError && fallbackError);
 
     if (!isConnected) {
         return (

@@ -8,7 +8,7 @@ import { useAccount, usePublicClient } from 'wagmi';
 import TokenSelector from './TokenSelector';
 import { allMainnetChains as chains } from '@/lib/evm-chains-mainnet';
 import { tokensPerMainnetChain as tokens, Token } from '@/lib/evm-tokens-mainnet';
-import { getExchangeRate, getU2UPrice } from '@/lib/chainlink-helper';
+import { getExchangeRate } from '@/lib/chainlink-helper';
 import { ethers } from 'ethers';
 
 interface ConfigurePayModalProps {
@@ -154,30 +154,35 @@ const ConfigurePayModal: React.FC<ConfigurePayModalProps> = ({
         await new Promise(resolve => setTimeout(resolve, 800)); // Reduced from 1500ms for better UX
       }
 
-      // Special handling for U2U token - use CoinGecko directly
-      if (token.symbol === 'U2U') {
-        const u2uData = await getU2UPrice();
-        if (u2uData && u2uData.exchangeRate) {
-          const rate = u2uData.exchangeRate;
-          setExchangeRate(rate);
+      // Special handling for FLOW token - use CoinGecko directly
+      if (token.symbol === 'FLOW') {
+        try {
+          const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=flow&vs_currencies=usd');
+          const data = await response.json();
+          if (data.flow && data.flow.usd) {
+            const rate = data.flow.usd;
+            setExchangeRate(rate);
 
-          if (onExchangeRateUpdate) {
-            onExchangeRateUpdate(rate, token.symbol);
+            if (onExchangeRateUpdate) {
+              onExchangeRateUpdate(rate, token.symbol);
+            }
+
+            setIsCalculating(false);
+
+            // Only update completion UI for manual updates
+            if (!isAutoUpdate) {
+              setCalculationComplete(true);
+              // Reset completion status after a delay
+              setTimeout(() => {
+                setCalculationComplete(false);
+              }, 3000);
+            }
+            return; // Exit early since we got the FLOW price
           }
-
-          setIsCalculating(false);
-
-          // Only update completion UI for manual updates
-          if (!isAutoUpdate) {
-            setCalculationComplete(true);
-            // Reset completion status after a delay
-            setTimeout(() => {
-              setCalculationComplete(false);
-            }, 3000);
-          }
-          return; // Exit early since we got the U2U price
+        } catch (error) {
+          console.log('Failed to fetch FLOW price from CoinGecko, falling back to regular logic');
         }
-        // If U2U price fetch fails, continue with regular getExchangeRate logic
+        // If FLOW price fetch fails, continue with regular getExchangeRate logic
       }
 
       // Get the exchange rate - make sure we use the passed chain ID
@@ -214,18 +219,23 @@ const ConfigurePayModal: React.FC<ConfigurePayModalProps> = ({
 
       // Let the getExchangeRate function handle all fallbacks
       try {
-        // Special handling for U2U token in fallback as well
-        if (token.symbol === 'U2U') {
-          const u2uData = await getU2UPrice();
-          if (u2uData && u2uData.exchangeRate) {
-            const fallbackRate = u2uData.exchangeRate;
-            setExchangeRate(fallbackRate);
+        // Special handling for FLOW token in fallback as well
+        if (token.symbol === 'FLOW') {
+          try {
+            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=flow&vs_currencies=usd');
+            const data = await response.json();
+            if (data.flow && data.flow.usd) {
+              const fallbackRate = data.flow.usd;
+              setExchangeRate(fallbackRate);
 
-            if (onExchangeRateUpdate) {
-              onExchangeRateUpdate(fallbackRate, token.symbol);
+              if (onExchangeRateUpdate) {
+                onExchangeRateUpdate(fallbackRate, token.symbol);
+              }
+              setIsCalculating(false);
+              return; // Exit early since we got the FLOW price
             }
-            setIsCalculating(false);
-            return; // Exit early since we got the U2U price
+          } catch (error) {
+            console.log('Fallback FLOW price fetch also failed');
           }
         }
 

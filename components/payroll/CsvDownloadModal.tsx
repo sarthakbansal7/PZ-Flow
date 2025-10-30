@@ -65,13 +65,13 @@ export const CsvDownloadModal: React.FC<CsvDownloadModalProps> = ({
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Token:</span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {selectedToken?.symbol || 'U2U'}
+                {selectedToken?.symbol || 'FLOW'}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Total Amount:</span>
               <span className="font-medium text-gray-900 dark:text-white">
-                {formatAmount(totalAmount)} {selectedToken?.symbol || 'U2U'}
+                {formatAmount(totalAmount)} {selectedToken?.symbol || 'FLOW'}
               </span>
             </div>
           </div>
