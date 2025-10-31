@@ -101,11 +101,11 @@ PayZoll operates through a suite of gas-optimized smart contracts deployed on bo
 #### Flow EVM Mainnet (Chain ID: 747)
 | Contract | Address | Purpose |
 |----------|---------|---------|
-| **Bulk Transfer** | `0xDfcB96A9A5744CdfB173C36849Af5bD7343DAb7E` | Multi-recipient token transfers |
-| **Airdrop** | `0x563442Ec415De8444059A46fc09F0F552AE8661a` | Token distribution with claim mechanism |
-| **Payroll** | `0x0A51554c3a743A62fcb6a633cf04CB2e0cd14169` | Automated employee payments |
-| **Stream** | `0xbb7E1b1Ef5c36fC4aE96879Ea3c4586B68569cAC` | Continuous payment streaming |
-| **Invoices** | `0x41353BAFF99bAB4AfE2bb6acF040C8C75B80137f` | Invoice creation and payment |
+| **Bulk Transfer** | `0x25BC332447444A00d1F52538b03Fec079e5cd5bC` | Multi-recipient token transfers |
+| **Airdrop** | `0x9ce2DaF245ADe333A77c6DCfC56845d491b33CfB` | Token distribution with claim mechanism |
+| **Payroll** | `0x563442Ec415De8444059A46fc09F0F552AE8661a` | Automated employee payments |
+| **Stream** | `0xDfcB96A9A5744CdfB173C36849Af5bD7343DAb7E` | Continuous payment streaming |
+| **Invoices** | `0x2D7522b86eB4dbbdE52482dB362be5DE2Ad3d096` | Invoice creation and payment |
 
 #### Flow EVM Testnet (Chain ID: 545)
 | Contract | Address | Purpose |
@@ -114,7 +114,7 @@ PayZoll operates through a suite of gas-optimized smart contracts deployed on bo
 | **Airdrop** | `0x563442Ec415De8444059A46fc09F0F552AE8661a` | Token distribution with claim mechanism |
 | **Payroll** | `0x0A51554c3a743A62fcb6a633cf04CB2e0cd14169` | Automated employee payments |
 | **Stream** | `0xbb7E1b1Ef5c36fC4aE96879Ea3c4586B68569cAC` | Continuous payment streaming |
-| **Invoices** | `0x41353BAFF99bAB4AfE2bb6acF040C8C75B80137f` | Invoice creation and payment |
+| **Invoices** | `0x41353BAFF99bAB4AfE2bb6acF0C75B80137f` | Invoice creation and payment |
 
 ### Contract Features
 

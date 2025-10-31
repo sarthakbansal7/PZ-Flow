@@ -23,11 +23,11 @@ export const FLOW_TESTNET_CHAIN_ID = 545;
 export const CONTRACT_ADDRESSES: NetworkContracts = {
   // Flow EVM Mainnet
   [FLOW_MAINNET_CHAIN_ID]: {
-    airdrop: "0x563442Ec415De8444059A46fc09F0F552AE8661a", // Placeholder - update with actual mainnet addresses
-    bulkTransfer: "0xDfcB96A9A5744CdfB173C36849Af5bD7343DAb7E", // Placeholder - update with actual mainnet addresses
-    stream: "0xbb7E1b1Ef5c36fC4aE96879Ea3c4586B68569cAC", // Placeholder - update with actual mainnet addresses
-    payroll: "0x0A51554c3a743A62fcb6a633cf04CB2e0cd14169", // Placeholder - update with actual mainnet addresses
-    invoices: "0x41353BAFF99bAB4AfE2bb6acF040C8C75B80137f", // Placeholder - update with actual mainnet addresses
+    airdrop: "0x9ce2DaF245ADe333A77c6DCfC56845d491b33CfB",
+    bulkTransfer: "0x25BC332447444A00d1F52538b03Fec079e5cd5bC",
+    stream: "0xDfcB96A9A5744CdfB173C36849Af5bD7343DAb7E",
+    payroll: "0x563442Ec415De8444059A46fc09F0F552AE8661a",
+    invoices: "0x2D7522b86eB4dbbdE52482dB362be5DE2Ad3d096",
   },
   // Flow EVM Testnet
   [FLOW_TESTNET_CHAIN_ID]: {
