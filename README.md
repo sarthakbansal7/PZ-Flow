@@ -1,6 +1,6 @@
 # PayZoll
 
-## 🚀 Decentralized Web3 Payment Infrastructure
+## 🚀 All in one Suite for Web3 Payments
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.3.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.1.0-blue?style=flat-square&logo=react)](https://reactjs.org/)
@@ -9,7 +9,9 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4.0-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![Flow EVM](https://img.shields.io/badge/Flow%20EVM-Mainnet%20%7C%20Testnet-green?style=flat-square)](https://flow.com/)
 
-PayZoll is a unified decentralized Web3 payment infrastructure that empowers businesses and individuals with comprehensive financial solutions through a single dashboard. From bulk payouts, airdrops, and DAO payroll to streaming payments and invoice management, PayZoll provides secure, scalable, and future-proof Web3-native payment services all accessible from one central control center.
+PayZoll is a Web3 payment infrastructure that consolidates multiple payment operations into a single dashboard. Built for businesses and DAOs, it handles bulk transfers, airdrops, payroll, streaming payments, and invoicing - all from one interface instead of juggling multiple platforms.
+
+📊 **[View Live Analytics Dashboard](https://dune.com/sarthak10/payzoll)** - Real-time transaction data and usage metrics on Flow EVM
 
 ## 📋 Table of Contents
 
@@ -28,25 +30,27 @@ PayZoll is a unified decentralized Web3 payment infrastructure that empowers bus
 
 ## 🌟 Overview
 
-PayZoll serves as a comprehensive decentralized Web3 payment infrastructure, providing businesses and DAOs with the tools they need to manage payments efficiently and securely. Our platform streamlines complex payment operations into simple, automated workflows—from bulk payouts and airdrops to streaming payments and DAO payroll management—all while maintaining the security and transparency of blockchain technology.
+PayZoll solves the fragmented Web3 payments problem. Instead of using separate tools for payroll, airdrops, and bulk transfers, teams get everything in one place. We built it because managing payments across multiple DApps was getting ridiculous - especially when you're trying to pay 50+ contributors or distribute tokens to thousands of users.
 
-### 🎯 Vision
+### 🎯 Why We Built This
 
-We envision a future where Web3 payments are as simple and intuitive as traditional financial transactions, while maintaining the benefits of decentralization, transparency, and global accessibility. Our unified dashboard approach eliminates the complexity of managing multiple payment services across different interfaces.
+Web3 payments shouldn't be harder than Web2. You shouldn't need 5 different tools to pay your team, distribute tokens, or handle invoices. PayZoll consolidates this into one dashboard because context switching between DApps kills productivity.
 
 ## ✨ Features
 
 ### 🔴 Live Features
 
-**🎛️ Unified Dashboard**: All payment services accessible from a single, intuitive control center
+**🎛️ Unified Dashboard**: Everything in one place - no more browser tab chaos
 
-- **💼 Bulk Payouts**: Efficiently distribute payments to multiple recipients in a single transaction, reducing gas costs and streamlining large-scale payment operations
-- **🎁 Airdrop**: Seamlessly distribute tokens to multiple wallets with customizable criteria and automated distribution mechanisms for marketing campaigns and community rewards
-- **👥 DAO Payroll**: Automated, gas-abstracted disbursements for decentralized organizations, eliminating manual overhead and ensuring contributors get paid on time in their preferred tokens
-- **📡 Streaming Payments**: Real-time money flows for freelancers, DAOs, and distributed teams—no more batch cycles or waiting periods, just continuous value transfer whenever and wherever it's needed
-- **📄 Invoices**: Create and manage professional invoices with crypto payment support
+- **💼 Bulk Transfers**: Send to multiple addresses in one transaction. Supports CSV uploads and saves ~80% on gas costs compared to individual transfers
+- **🎁 Airdrops**: Token distribution with claim mechanics. Recipients pull when ready, saving you gas on failed transactions
+- **👥 DAO Payroll**: Recurring payments for contributors. Set it once, automates monthly. Works with any ERC20 token
+- **📡 Token Streaming**: Linear vesting and real-time payments. Good for freelancers or time-locked compensation
+- **📄 Invoices**: Professional crypto invoicing. Share links, track payments, get notified when paid
 
-**All services are integrated into a single dashboard at `/dashboard` for seamless payment management**
+**Access everything from `/dashboard` - one URL, one wallet connection, done**
+
+🔗 **[Analytics & Metrics](https://dune.com/sarthak10/payzoll)** - Track transaction volumes, user adoption, and protocol usage in real-time
 
 
 ## 🛠️ Technology Stack
@@ -120,7 +124,6 @@ PayZoll operates through a suite of gas-optimized smart contracts deployed on bo
 
 #### 🔄 Bulk Transfer Contract
 - **Gas Optimized**: Minimal gas consumption for batch operations
-- **Multi-Token Support**: FLOW and ERC20 token transfers
 - **Safety Checks**: Comprehensive validation and error handling
 - **Events**: Detailed transaction logging
 
@@ -357,13 +360,16 @@ Business development expert with entrepreneurial experience. Previously managed 
 
 ## 🏆 Achievements
 
-PayZoll has been recognized across multiple prestigious hackathons and programs:
+**Backed by Stellar Blockchain** - **PayZoll** has been recognized and won multiple major events including some of the biggest hackathons in the Web3 space:
 
-- 🥇 **Winner** – ETHIndia Hackathon
-- 🥇 **Winner** – BNB Chain Hackathon Q4
-- 🥇 **Winner** – Stellar Build Hackathon
-- 🥇 **Winner** – Pharos Builder Base Camp
-- 🎓 **Selected** for EduChain OpenCampus incubation program
+
+- 🥇 **Winner** – **BNB Chain Hackathon Q4** 
+- 🥇 **Winner** – **Stellar Build Hackathon** 
+- 🥇 **Winner** – **Pharos Builder Base Camp** 
+- 🥇 **Winner** – **ETHIndia Hackathon** 
+- 🎓 **Selected** – **EduChain OpenCampus Incubation Program** (Prestigious Web3 education incubator)
+
+PayZoll's proven track record across multiple blockchain ecosystems demonstrates our commitment to building on-chain payment infrastructure that serves the entire Web3 community.
 
 ## 🔧 Development
 
@@ -413,6 +419,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - **Website**: [PayZoll Platform](https://payzoll.xyz)
 - **Dashboard**: [Unified Payment Control Center](https://payzoll.xyz/dashboard)
+- **📊 Analytics**: [Dune Dashboard - PayZoll Metrics](https://dune.com/sarthak10/payzoll)
 - **Flow Network**: [Official Website](https://flow.com/)
 - **Flow EVM Explorer**: [Mainnet](https://evm.flowscan.io) | [Testnet](https://evm-testnet.flowscan.io)
 
